@@ -211,27 +211,27 @@ class Dataset_Custom(Dataset):
         # size [seq_len, label_len, pred_len]
         self.args = args
         # info
-        if size == None:
+        if size == None and  not ("seq_len" in args.keys()):
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len = self.args.get("seq_len", size[0])
+            self.label_len = self.args.get("label_len", size[1])
+            self.pred_len = self.args.get("pred_len", size[2])
         # init
         assert flag in ['train', 'test', 'val']
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.timeenc = timeenc
-        self.freq = freq
+        self.features = self.args.get("features", features)
+        self.target   = self.args.get("target", target)
+        self.scale    = self.args.get("scale", scale)
+        self.timeenc  = self.args.get("timeenc", timeenc)
+        self.freq     = self.args.get("freq", freq)
 
-        self.root_path = root_path
-        self.data_path = data_path
+        self.root_path = self.args.get("root_path", root_path)
+        self.data_path = self.args.get("data_path", data_path)
         self.__read_data__()
 
     def __read_data__(self):
