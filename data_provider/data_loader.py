@@ -13,7 +13,7 @@ from sktime.datasets import load_from_tsfile_to_dataframe
 import warnings
 from utils.augmentation import run_augmentation_single
 
-from typing import override
+from typing_extensions import override
 
 warnings.filterwarnings("ignore")
 
@@ -966,8 +966,8 @@ class UEAloader(Dataset):
 
 
 class CMILoader(UEAloader):
-    def __init__(self, args, root_path, file_list=None, limit_size=None, flag=None):
-        super().__init__(self, args, root_path, file_list, limit_size, flag)
+    def __init__(self, args, root_path, data_path, limit_size=None, flag=None):
+        super().__init__(self, args, root_path, [data_path], limit_size, flag)
 
     @override
     def load_all(self, root_path, file_list=None, flag=None):
