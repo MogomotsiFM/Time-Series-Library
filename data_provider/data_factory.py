@@ -62,6 +62,7 @@ def data_provider(args, flag):
         data_set = Data(
             args=args,
             root_path=args.root_path,
+            data_path=args.data_path,
             flag=flag,
         )
 

@@ -967,7 +967,7 @@ class UEAloader(Dataset):
 
 class CMILoader(UEAloader):
     def __init__(self, args, root_path, data_path, limit_size=None, flag=None):
-        super().__init__(self, args, root_path, [data_path], limit_size, flag)
+        super().__init__(args, root_path, [data_path], limit_size, flag)
 
     @override
     def load_all(self, root_path, file_list=None, flag=None):
