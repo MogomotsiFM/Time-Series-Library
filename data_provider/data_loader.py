@@ -977,7 +977,10 @@ class CMILoader(UEAloader):
         - The data lives in a single csv file,
         """
         print("Reading data")
-        df = pd.read_csv(root_path / file_list[0])
+        if flag == "TRAIN":
+            df = pd.read_csv(root_path / "train.csv")
+        else:
+            df = pd.read_csv(root_path / "test.csv")
 
         le = LabelEncoder()
         df["gesture_int"] = le.fit_transform(df["gesture"])

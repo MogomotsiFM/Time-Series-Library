@@ -19,12 +19,14 @@ class Exp_Classification(Exp_Basic):
 
     def _build_model(self):
         # model input depends on data
-        train_data, train_loader = self._get_data(flag="TRAIN")
-        test_data, test_loader = self._get_data(flag="TEST")
-        self.args.seq_len = max(train_data.max_seq_len, test_data.max_seq_len)
+        self.train_data, self.train_loader = self._get_data(flag="TRAIN")
+        print("here1")
+        self.test_data, self.test_loader = self._get_data(flag="TEST")
+        print("here1")
+        self.args.seq_len = max(self.train_data.max_seq_len, self.test_data.max_seq_len)
         self.args.pred_len = 0
-        self.args.enc_in = train_data.feature_df.shape[1]
-        self.args.num_class = len(train_data.class_names)
+        self.args.enc_in = self.train_data.feature_df.shape[1]
+        self.args.num_class = len(self.train_data.class_names)
         # model init
         model = self.model_dict[self.args.model].Model(self.args).float()
         if self.args.use_multi_gpu and self.args.use_gpu:
@@ -81,9 +83,14 @@ class Exp_Classification(Exp_Basic):
         return total_loss, accuracy
 
     def train(self, setting):
-        train_data, train_loader = self._get_data(flag="TRAIN")
-        vali_data, vali_loader = self._get_data(flag="TEST")
-        test_data, test_loader = self._get_data(flag="TEST")
+        # train_data, train_loader = self._get_data(flag="TRAIN")
+        train_data, train_loader = self.train_data, self.train_loader
+
+        # vali_data, vali_loader = self._get_data(flag="TEST")
+        vali_data, vali_loader = self.test_data, self.test_loader
+
+        # test_data, test_loader = self._get_data(flag="TEST")
+        test_data, test_loader = self.test_data, self.test_loader
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
