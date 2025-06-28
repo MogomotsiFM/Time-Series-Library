@@ -975,6 +975,7 @@ class CMILoader(UEAloader):
         The differences between this and the parent are that:
         - The data lives in a single csv file,
         """
+        print("Reading data")
         df = pd.read_csv(root_path / file_list[0])
 
         le = LabelEncoder()
@@ -1025,6 +1026,7 @@ class CMILoader(UEAloader):
 
         seq_gp = df.groupby("sequence_id")
         for i, item in enumerate(seq_gp):
+            print(i)
             _, seq = item
 
             # Pre-process
