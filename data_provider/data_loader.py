@@ -977,6 +977,9 @@ class CMILoader(UEAloader):
         """
         df = pd.read_csv(root_path / file_list[0])
 
+        le = LabelEncoder()
+        df["gesture_int"] = le.fit_transform(df["gesture"])
+
         # Feature list
         meta_cols = {
             "gesture",
@@ -1012,9 +1015,6 @@ class CMILoader(UEAloader):
         headers.extend(meta_cols)
 
         df = df[headers]
-
-        le = LabelEncoder()
-        df["gesture_int"] = le.fit_transform(df["gesture"])
 
         # Build sequences
         df = df[df["behavior"] == "Performs gesture"]
