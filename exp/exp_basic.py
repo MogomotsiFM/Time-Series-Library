@@ -67,7 +67,6 @@ class Exp_Basic(object):
             "WPMixer": WPMixer,
             "MultiPatchFormer": MultiPatchFormer,
         }
-        print(args)
         if args.model == "Mamba":
             print("Please make sure you have successfully installed mamba_ssm")
             from models import Mamba

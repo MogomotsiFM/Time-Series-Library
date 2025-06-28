@@ -1026,8 +1026,11 @@ class CMILoader(UEAloader):
 
         seq_gp = df.groupby("sequence_id")
         for i, item in enumerate(seq_gp):
-            print(i)
+            print(f"{i} / {len(seq_gp)}")
             _, seq = item
+
+            if i >= 8100:
+                break
 
             # Pre-process
             mat = seq[feature_cols].ffill().bfill().fillna(0).values
