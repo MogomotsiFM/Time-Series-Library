@@ -1033,7 +1033,7 @@ class CMILoader(UEAloader):
             mat = pd.DataFrame(mat, columns=feature_cols)
             idx = np.ones((mat.shape[0], 1)) * i
             mat["index"] = idx
-            mat["time"] = [f"{s}S" for s in pd.arange(mat.shape[0])]
+            mat["time"] = [f"{s}S" for s in np.arange(mat.shape[0])]
 
             all_df = pd.concat([all_df, mat])
 
