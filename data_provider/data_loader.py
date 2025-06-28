@@ -844,6 +844,7 @@ class UEAloader(Dataset):
         self.feature_names = self.all_df.columns
         self.feature_df = self.all_df
 
+        print("Herererere")
         # pre_process
         normalizer = Normalizer()
         self.feature_df = normalizer.normalize(self.feature_df)
@@ -957,7 +958,7 @@ class UEAloader(Dataset):
             batch_x, labels, augmentation_tags = run_augmentation_single(
                 batch_x, labels, self.args
             )
-
+            print
             batch_x = batch_x.reshape((1 * seq_len, num_columns))
 
         return self.instance_norm(torch.from_numpy(batch_x)), torch.from_numpy(labels)
