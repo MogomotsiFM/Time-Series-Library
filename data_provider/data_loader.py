@@ -1030,7 +1030,8 @@ class CMILoader(UEAloader):
             # Pre-process
             mat = seq[feature_cols].ffill().bfill().fillna(0).values
 
-            idx = pd.ones((mat.shape[0], 1)) * i
+            mat = pd.DataFrame(mat, columns=feature_cols)
+            idx = np.ones((mat.shape[0], 1)) * i
             mat["index"] = idx
             mat["time"] = [f"{s}S" for s in pd.arange(mat.shape[0])]
 
