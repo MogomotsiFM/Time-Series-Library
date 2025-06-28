@@ -1032,9 +1032,9 @@ class CMILoader(UEAloader):
 
         seq_gp = df.groupby("sequence_id")
         for i, item in enumerate(seq_gp):
-            if i > int(0.8 * len(seq_gp)) and self.args.flag == "TRAIN":
+            if i > int(0.8 * len(seq_gp)) and flag == "TRAIN":
                 continue
-            if i < int(0.2 * len(seq_gp)) and self.args.flag == "TEST":
+            if i < int(0.2 * len(seq_gp)) and flag == "TEST":
                 continue
 
             _, seq = item
