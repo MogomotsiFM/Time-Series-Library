@@ -978,10 +978,11 @@ class CMILoader(UEAloader):
         - The data lives in a single csv file,
         """
         print("Reading data")
-        if flag == "TRAIN":
-            df = pd.read_csv(root_path / "train.csv")
-        else:
-            df = pd.read_csv(root_path / "test.csv")
+        df = pd.read_csv(root_path / "train.csv")
+        # if flag == "TRAIN":
+        #    df = pd.read_csv(root_path / "train.csv")
+        # else:
+        #    df = pd.read_csv(root_path / "test.csv")
 
         le = LabelEncoder()
         df["gesture_int"] = le.fit_transform(df["gesture"])
@@ -1031,6 +1032,11 @@ class CMILoader(UEAloader):
 
         seq_gp = df.groupby("sequence_id")
         for i, item in enumerate(seq_gp):
+            if i > int(0.8 * len(seq_gp)) and self.args.flag == "TRAIN":
+                continue
+            if i < int(0.2 * len(seq_gp)) and self.args.flag == "TEST":
+                continue
+
             _, seq = item
 
             # Pre-process
