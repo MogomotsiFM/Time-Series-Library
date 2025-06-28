@@ -827,6 +827,7 @@ class UEAloader(Dataset):
         self.all_df, self.labels_df = self.load_all(
             root_path, file_list=file_list, flag=flag
         )
+        print("Here0")
         self.all_IDs = (
             self.all_df.index.unique()
         )  # all sample IDs (integer indices 0 ... num_samples-1)
