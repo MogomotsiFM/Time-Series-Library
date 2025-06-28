@@ -828,9 +828,9 @@ class UEAloader(Dataset):
             root_path, file_list=file_list, flag=flag
         )
         print("Here0")
-        self.all_IDs = (
-            self.all_df.index.unique()
-        )  # all sample IDs (integer indices 0 ... num_samples-1)
+        # all sample IDs (integer indices 0 ... num_samples-1)
+        self.all_IDs = self.all_df.index.unique()
+        print("Here0")
 
         if limit_size is not None:
             if limit_size > 1:
