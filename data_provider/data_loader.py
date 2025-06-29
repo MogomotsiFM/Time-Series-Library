@@ -827,10 +827,8 @@ class UEAloader(Dataset):
         self.all_df, self.labels_df = self.load_all(
             root_path, file_list=file_list, flag=flag
         )
-        print("Here0")
         # all sample IDs (integer indices 0 ... num_samples-1)
         self.all_IDs = self.all_df.index.unique()
-        print("Here0")
 
         if limit_size is not None:
             if limit_size > 1:
@@ -844,7 +842,6 @@ class UEAloader(Dataset):
         self.feature_names = self.all_df.columns
         self.feature_df = self.all_df
 
-        print("Herererere")
         # pre_process
         normalizer = Normalizer()
         self.feature_df = normalizer.normalize(self.feature_df)
@@ -958,7 +955,6 @@ class UEAloader(Dataset):
             batch_x, labels, augmentation_tags = run_augmentation_single(
                 batch_x, labels, self.args
             )
-            print
             batch_x = batch_x.reshape((1 * seq_len, num_columns))
 
         return self.instance_norm(torch.from_numpy(batch_x)), torch.from_numpy(labels)
@@ -978,14 +974,17 @@ class CMILoader(UEAloader):
         - The data lives in a single csv file,
         """
         print("Reading data")
-        df = pd.read_csv(root_path / "train.csv")
-        # if flag == "TRAIN":
-        #    df = pd.read_csv(root_path / "train.csv")
-        # else:
-        #    df = pd.read_csv(root_path / "test.csv")
+        if flag == "TRAIN":
+            df = pd.read_csv(f"{root_path}\\train.csv")
 
-        le = LabelEncoder()
-        df["gesture_int"] = le.fit_transform(df["gesture"])
+            le = LabelEncoder()
+            df["gesture_int"] = le.fit_transform(df["gesture"])
+
+            df = df[df["behavior"] == "Performs gesture"]
+        else:
+            df = pd.read_csv(f"{root_path}\\test.csv")
+
+        df = df.dropna()
 
         # Feature list
         meta_cols = {
@@ -1014,47 +1013,55 @@ class CMILoader(UEAloader):
         if self.args.use_imu_only:
             feature_cols = imu_cols
 
-            # if USE_ACCELERATION_ONLY:
             if self.args.use_acceleration_only:
                 feature_cols = ["acc_x", "acc_y", "acc_z"]
 
-        headers = [f for f in feature_cols]
-        headers.extend(meta_cols)
+        # new_columns = ["index", "time"]
+        new_columns = ["index"]
+        new_columns.extend(feature_cols)
+        print("Columns: ", new_columns)
+        dtypes = {feature: "float" for feature in feature_cols}
+        dtypes["index"] = "int64"
+        # dtypes["time"] = "float"
 
-        df = df[headers]
-
-        # Build sequences
-        df = df[df["behavior"] == "Performs gesture"]
-
-        new_columns = ["index", "time"].extend(feature_cols)
-        all_df = pd.DataFrame(columns=new_columns)
+        all_df = pd.DataFrame(columns=new_columns)  # , dtype=dtypes)
+        all_df = all_df.astype(dtypes)
         labels = []
 
+        self.max_seq_len = 0
         seq_gp = df.groupby("sequence_id")
         for i, item in enumerate(seq_gp):
-            if i > int(0.6 * len(seq_gp)) and flag == "TRAIN":
-                continue
-            if i < int(0.4 * len(seq_gp)) and flag == "TEST":
-                continue
-
             _, seq = item
 
             # Pre-process
-            mat = seq[feature_cols].ffill().bfill().fillna(0).values
-
+            mat = seq[feature_cols].ffill().bfill().fillna(0).values.astype(float)
             mat = pd.DataFrame(mat, columns=feature_cols)
-            idx = np.ones((mat.shape[0], 1)) * i
-            mat["index"] = idx
-            mat["time"] = [f"{s}S" for s in np.arange(mat.shape[0])]
+
+            idx = np.ones((mat.shape[0],)) * i
+            # mat["index"] = idx
+            mat["index"] = pd.Series(idx)
+            # mat["time"] = [f"{s}S" for s in np.arange(mat.shape[0])]
+            # mat["time"] = pd.Series(np.arange(mat.shape[0]))
+            mat.set_index("index", drop=True)
 
             all_df = pd.concat([all_df, mat])
 
-            labels.append(seq["gesture_int"].iloc[0])
+            if self.max_seq_len < len(mat):
+                self.max_seq_len = len(mat)
+
+            if flag == "TRAIN":
+                labels.append(seq["gesture_int"].iloc[0])
+
+        all_df.set_index("index", drop=True, inplace=True)
 
         labels = pd.Series(labels, dtype="category")
         self.class_names = labels.cat.categories
         labels_df = pd.DataFrame(
             labels.cat.codes, dtype=np.int8
         )  # int8-32 gives an error when using nn.CrossEntropyLoss
+
+        # Replace NaN values
+        grp = all_df.groupby(by=all_df.index)
+        all_df = grp.transform(interpolate_missing)
 
         return all_df, labels_df
