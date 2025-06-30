@@ -19,6 +19,9 @@ class PositionalEmbedding(nn.Module):
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
+        # _, C = (pe[:, 1::2]).shape
+        # prod = position * div_term
+        # pe[:, 1::2] = torch.cos(prod[:, :C])
 
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
@@ -115,11 +118,15 @@ class TimeFeatureEmbedding(nn.Module):
 
 
 class DataEmbedding(nn.Module):
-    def __init__(self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1):
+    def __init__(
+        self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1, max_seq_len=5000
+    ):
         super(DataEmbedding, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(d_model=d_model)
+        self.position_embedding = PositionalEmbedding(
+            d_model=d_model, max_len=max_seq_len
+        )
         self.temporal_embedding = (
             TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
             if embed_type != "timeF"

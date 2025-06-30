@@ -1,8 +1,10 @@
 import os
-import numpy as np
-import pandas as pd
+import math
 import glob
 import re
+
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -14,6 +16,7 @@ import warnings
 from utils.augmentation import run_augmentation_single
 
 from typing_extensions import override
+from typing import Literal, List
 
 warnings.filterwarnings("ignore")
 
@@ -974,7 +977,7 @@ class CMILoader(UEAloader):
         - The data lives in a single csv file,
         """
         print("Reading data")
-        if flag == "TRAIN":
+        if flag in ["TRAIN", "VALI"]:
             df = pd.read_csv(f"{root_path}\\train.csv")
 
             le = LabelEncoder()
@@ -1016,6 +1019,17 @@ class CMILoader(UEAloader):
             if self.args.use_acceleration_only:
                 feature_cols = ["acc_x", "acc_y", "acc_z"]
 
+        self.args.enc_in = len(feature_cols)
+        n = math.log(self.args.enc_in, 2)
+        # self.args.d_model = np.maximum(64, int(math.pow(2, math.ceil(n))))
+        self.args.d_model = 4 * int(math.pow(2, math.ceil(n)))
+        # self.args.d_ff = np.maximum(64, 4 * self.args.enc_in)
+        self.args.d_ff = 4 * self.args.enc_in
+
+        new_columns = ["sequence_id", "gesture_int"]
+        new_columns.extend(feature_cols)
+        df = df[new_columns]
+
         # new_columns = ["index", "time"]
         new_columns = ["index"]
         new_columns.extend(feature_cols)
@@ -1026,6 +1040,13 @@ class CMILoader(UEAloader):
 
         all_df = pd.DataFrame(columns=new_columns)  # , dtype=dtypes)
         all_df = all_df.astype(dtypes)
+
+        max_seq_len, Xf, labels = self.normalize_seq_len(df, feature_cols)
+
+        self.max_seq_len = max_seq_len
+        print("Max seq lenght: ", self.max_seq_len)
+
+        """
         labels = []
 
         self.max_seq_len = 0
@@ -1059,9 +1080,109 @@ class CMILoader(UEAloader):
         labels_df = pd.DataFrame(
             labels.cat.codes, dtype=np.int8
         )  # int8-32 gives an error when using nn.CrossEntropyLoss
+        """
+        all_df = pd.concat(Xf, axis=0)
+        print(all_df.columns)
+
+        # all_df.set_index("index", drop=True, inplace=True)
+
+        print(len(Xf), len(labels))
+
+        if "gesture_int" in all_df.columns:
+            all_df.drop(columns=["gesture_int"], inplace=True)
+        if "sequence_id" in all_df.columns:
+            all_df.drop(columns=["sequence_id"], inplace=True)
+
+        print("Data shape: ", all_df.shape)
+        print("Head\n", all_df.head(5))
+        print("\n", all_df[100:105])
+        print("\n", all_df[1000:1005])
+        print("\n", all_df[3000:3005])
+        print("\n", all_df[5000:5005])
+
+        labels = pd.Series(labels, dtype="category")
+        self.class_names = labels.cat.categories
+        labels_df = pd.DataFrame(
+            labels.cat.codes, dtype=np.int8
+        )  # int8-32 gives an error when using nn.CrossEntropyLoss
 
         # Replace NaN values
         grp = all_df.groupby(by=all_df.index)
+        print("Groups: ", len(grp))
         all_df = grp.transform(interpolate_missing)
 
         return all_df, labels_df
+
+    def normalize_seq_len(
+        self,
+        # Contains data about the behaviour of interest and is grouped by sequence_id
+        df: pd.DataFrame,
+        feature_cols: List[str],
+    ):
+        labels = []
+        X_list: List[pd.DataFrame] = []
+        lens: List[int] = []
+
+        seq_gp = df.groupby("sequence_id")
+        for _, seq in seq_gp:
+            labels.append(seq["gesture_int"].values[0])
+
+            seq = seq[feature_cols]
+
+            X_list.append(seq.copy())
+            lens.append(len(seq))
+
+        max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
+
+        min_len = int(0.25 * max_seq_len)
+
+        new_labels: List[int] = []
+        Xf = []
+
+        index = 0
+        for seq, label, length in zip(X_list, labels, lens):
+
+            if True or length >= min_len:
+                idx = np.ones((seq.shape[0],)) * index
+                seq.set_index(pd.Index(idx), inplace=True)
+                Xf.append(seq)
+
+                new_labels.append(label)
+
+                index = index + 1
+
+                # We only need part of the sequence to determine if it is interesting
+                # Use this observation to generate new data
+                # This simulates a decoder only transformer that can ingest one token at a time.
+                # Actually, this approach slows down learning and inference :-(
+                x = seq
+                z = seq
+                for j in range(length, math.ceil(0.5 * max_seq_len), -2):
+                    x = x.copy()
+
+                    # x = x.iloc[:j, :]
+                    x = x[:j]
+                    idx = np.ones((x.shape[0],)) * index
+                    x.set_index(pd.Index(idx), inplace=True)
+                    Xf.append(x)
+
+                    new_labels.append(label)
+
+                    index = index + 1
+
+                    # Apply the same observation to the beginning of the sequence
+                    z = z.copy()
+                    # z = z.iloc[1:, :]
+                    z = z[1:]
+                    idx = np.ones((z.shape[0],)) * index
+                    z.set_index(pd.Index(idx), inplace=True)
+                    Xf.append(z)
+
+                    new_labels.append(label)
+
+                    index = index + 1
+
+                    if index % 5000 == 0:
+                        print(index)
+
+        return max_seq_len, Xf, new_labels

@@ -137,7 +137,6 @@ def intro():
     config["drop_last"] = True
     config["top_k"] = 4  # TimesNet parameter
 
-    fix_seed = 42
     random.seed(fix_seed)
     torch.manual_seed(fix_seed)
     np.random.seed(fix_seed)
@@ -211,7 +210,7 @@ def intro():
     config["c_out"] = num_classes
     # parser.add_argument('--c_out', type=int, default=7, help='output size')
 
-    config["d_model"] = 20 * d_model
+    config["d_model"] = 30 * d_model
     # parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
 
     config["n_heads"] = h
@@ -302,8 +301,8 @@ def intro():
     # parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
     # de-stationary projector params
-    config["p_hidden_dims"] = [128, 128]
-    config["p_hidden_layers"] = 2
+    config["p_hidden_dims"] = [128]  # [128, 128]
+    config["p_hidden_layers"] = len(config["p_hidden_dims"])  # 2
     # parser.add_argument('--p_hidden_dims', type=int, nargs='+', default=[128, 128],
     #                    help='hidden layer dimensions of projector (List)')
     # parser.add_argument('--p_hidden_layers', type=int, default=2, help='number of hidden layers in projector')
@@ -369,13 +368,14 @@ if __name__ == "__main__":
     num_classes = 18
     seq_len = 35
     d_model = 3
-    N: int = 6
+    N: int = 8
     h: int = 1
     dropout: float = 0.1
     d_ff: int = 256
     all_features = False  # Use all encoder output features for classification
     device = None
     train_epochs = 500
-    batch_size = 16
+    batch_size = 32
+    fix_seed = 421
 
     intro()

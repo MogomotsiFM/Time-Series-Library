@@ -27,11 +27,9 @@ class Exp_Classification(Exp_Basic):
         # model input depends on data
         all_data, _ = self._get_data(flag="TRAIN")
 
-        self.args.seq_len = min(
-            self.args.seq_len, all_data.max_seq_len
-        )  #  self.args.seq_len)  # ???????
+        self.args.max_seq_len = all_data.max_seq_len
 
-        train_, vali_ = self._split_data(all_data, self.args.seq_len)
+        train_, vali_ = self._split_data(all_data, self.args.max_seq_len)
         self.train_loader, self.train_data = train_
         self.vali_loader, self.vali_data = vali_
 
@@ -93,11 +91,11 @@ class Exp_Classification(Exp_Basic):
         )
 
     def _select_optimizer(self):
-        # model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
         # model_optim = optim.RAdam(self.model.parameters(), lr=self.args.learning_rate)
-        model_optim = optim.SGD(
-            self.model.parameters(), lr=self.args.learning_rate, momentum=0.75
-        )
+        # model_optim = optim.SGD(
+        #    self.model.parameters(), lr=self.args.learning_rate, momentum=0.75
+        # )
         return model_optim
 
     def _select_criterion(self):
@@ -125,6 +123,8 @@ class Exp_Classification(Exp_Basic):
                 trues.append(label)
 
         total_loss = np.average(total_loss)
+
+        print(len(preds), len(trues))
 
         preds = torch.cat(preds, 0)
         trues = torch.cat(trues, 0)
@@ -214,18 +214,19 @@ class Exp_Classification(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            train_loss0, train_accuracy = self.vali(train_data, train_loader, criterion)
+            # train_loss0, train_accuracy = self.vali(train_data, train_loader, criterion)
             vali_loss, val_accuracy = self.vali(vali_data, vali_loader, criterion)
             # test_loss, test_accuracy = self.vali(test_data, test_loader, criterion)
 
             print(
                 # "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f} Test Loss: {5:.3f} Test Acc: {6:.3f}".format(
-                "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} ({3:.3f}) Train Acc: {4:.3f} Vali Loss: {5:.3f} Vali Acc: {6:.3f}".format(
+                # "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} ({3:.3f}) Train Acc: {4:.3f} Vali Loss: {5:.3f} Vali Acc: {6:.3f}".format(
+                "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f}".format(
                     epoch + 1,
                     train_steps,
                     train_loss,
-                    train_loss0,
-                    train_accuracy,
+                    # train_loss0,
+                    # train_accuracy,
                     vali_loss,
                     val_accuracy,
                 )
