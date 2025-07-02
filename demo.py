@@ -6,6 +6,7 @@ from exp.exp_imputation import Exp_Imputation
 from exp.exp_short_term_forecasting import Exp_Short_Term_Forecast
 from exp.exp_anomaly_detection import Exp_Anomaly_Detection
 from exp.exp_classification import Exp_Classification
+from exp.exp_cmi_classification import Exp_CMI_Classification
 from utils.print_args import print_args
 import random
 import numpy as np
@@ -48,7 +49,8 @@ def wrapper(args):
     elif args["task_name"] == "anomaly_detection":
         Exp = Exp_Anomaly_Detection
     elif args["task_name"] == "classification":
-        Exp = Exp_Classification
+        # Exp = Exp_Classification
+        Exp = Exp_CMI_Classification
     else:
         Exp = Exp_Long_Term_Forecast
 
@@ -133,7 +135,7 @@ def intro():
     # Original code parameters
     config["use_imu_only"] = True
     config["use_acceleration_only"] = True
-    config["pad_percentile"] = True
+    config["pad_percentile"] = pad_percentile
     config["drop_last"] = True
     config["top_k"] = 4  # TimesNet parameter
 
@@ -274,7 +276,7 @@ def intro():
     config["des"] = "CMI"
     config["loss"] = "CrossEntropy"
     config["lradj"] = (
-        "type2"  # Strategies to adjust the learning rate: type1, type2, type3, consine
+        "type3"  # Strategies to adjust the learning rate: type1, type2, type3, consine
     )
     config["use_amp"] = False
     # parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
@@ -367,6 +369,7 @@ if __name__ == "__main__":
     model_name = "Transformer"
     num_classes = 18
     seq_len = 35
+    pad_percentile = 0.95
     d_model = 3
     N: int = 8
     h: int = 1
@@ -376,6 +379,6 @@ if __name__ == "__main__":
     device = None
     train_epochs = 500
     batch_size = 32
-    fix_seed = 421
+    fix_seed = 1983
 
     intro()

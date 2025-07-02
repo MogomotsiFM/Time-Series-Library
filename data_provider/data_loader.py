@@ -8,6 +8,8 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
+
 from utils.timefeatures import time_features
 from data_provider.m4 import M4Dataset, M4Meta
 from data_provider.uea import subsample, interpolate_missing, Normalizer
@@ -16,7 +18,7 @@ import warnings
 from utils.augmentation import run_augmentation_single
 
 from typing_extensions import override
-from typing import Literal, List
+from typing import Literal, List, Set
 
 warnings.filterwarnings("ignore")
 
@@ -1022,7 +1024,7 @@ class CMILoader(UEAloader):
         self.args.enc_in = len(feature_cols)
         n = math.log(self.args.enc_in, 2)
         # self.args.d_model = np.maximum(64, int(math.pow(2, math.ceil(n))))
-        self.args.d_model = 4 * int(math.pow(2, math.ceil(n)))
+        self.args.d_model = 8 * int(math.pow(2, math.ceil(n + 2)))
         # self.args.d_ff = np.maximum(64, 4 * self.args.enc_in)
         self.args.d_ff = 4 * self.args.enc_in
 
@@ -1041,46 +1043,11 @@ class CMILoader(UEAloader):
         all_df = pd.DataFrame(columns=new_columns)  # , dtype=dtypes)
         all_df = all_df.astype(dtypes)
 
-        max_seq_len, Xf, labels = self.normalize_seq_len(df, feature_cols)
+        max_seq_len, Xf, labels = self.normalize_seq_len(df, feature_cols, flag)
 
         self.max_seq_len = max_seq_len
         print("Max seq lenght: ", self.max_seq_len)
 
-        """
-        labels = []
-
-        self.max_seq_len = 0
-        seq_gp = df.groupby("sequence_id")
-        for i, item in enumerate(seq_gp):
-            _, seq = item
-
-            # Pre-process
-            mat = seq[feature_cols].ffill().bfill().fillna(0).values.astype(float)
-            mat = pd.DataFrame(mat, columns=feature_cols)
-
-            idx = np.ones((mat.shape[0],)) * i
-            # mat["index"] = idx
-            mat["index"] = pd.Series(idx)
-            # mat["time"] = [f"{s}S" for s in np.arange(mat.shape[0])]
-            # mat["time"] = pd.Series(np.arange(mat.shape[0]))
-            mat.set_index("index", drop=True)
-
-            all_df = pd.concat([all_df, mat])
-
-            if self.max_seq_len < len(mat):
-                self.max_seq_len = len(mat)
-
-            if flag == "TRAIN":
-                labels.append(seq["gesture_int"].iloc[0])
-
-        all_df.set_index("index", drop=True, inplace=True)
-
-        labels = pd.Series(labels, dtype="category")
-        self.class_names = labels.cat.categories
-        labels_df = pd.DataFrame(
-            labels.cat.codes, dtype=np.int8
-        )  # int8-32 gives an error when using nn.CrossEntropyLoss
-        """
         all_df = pd.concat(Xf, axis=0)
         print(all_df.columns)
 
@@ -1094,11 +1061,8 @@ class CMILoader(UEAloader):
             all_df.drop(columns=["sequence_id"], inplace=True)
 
         print("Data shape: ", all_df.shape)
-        print("Head\n", all_df.head(5))
-        print("\n", all_df[100:105])
-        print("\n", all_df[1000:1005])
-        print("\n", all_df[3000:3005])
-        print("\n", all_df[5000:5005])
+        print("Head\n", all_df.head(10))
+        print("Tail\n", all_df.tail(10))
 
         labels = pd.Series(labels, dtype="category")
         self.class_names = labels.cat.categories
@@ -1118,20 +1082,55 @@ class CMILoader(UEAloader):
         # Contains data about the behaviour of interest and is grouped by sequence_id
         df: pd.DataFrame,
         feature_cols: List[str],
+        flag: str,
     ):
         labels = []
         X_list: List[pd.DataFrame] = []
         lens: List[int] = []
+        seq_ids: List[int] = []
 
+        index = 0
         seq_gp = df.groupby("sequence_id")
-        for _, seq in seq_gp:
-            labels.append(seq["gesture_int"].values[0])
+        for seq_id, seq in seq_gp:
 
-            seq = seq[feature_cols]
+            # This would be true if gathering validation data
+            # if hasattr(self.args, "test_seq_ids") and not (seq_id in self.args.test_seq_ids):
+            if flag == "TRAIN" or not (seq_id in self.args.test_seq_ids):
+                labels.append(seq["gesture_int"].values[0])
+                seq_ids.append(seq_id)
 
-            X_list.append(seq.copy())
-            lens.append(len(seq))
+                seq = seq[feature_cols]
+                seq = seq.copy()
+                idx = np.ones((seq.shape[0],)) * index
+                seq.set_index(pd.Index(idx), inplace=True)
 
+                index = index + 1
+
+                X_list.append(seq)
+                lens.append(len(seq))
+
+        if flag == "VALI":  # Validation dataset
+            max_seq_len = np.max(lens)
+
+            return max_seq_len, X_list, labels
+        else:  # flag == "TRAIN"
+            # Split the data into training and validation sets.
+            ids = list(range(len(X_list)))
+
+            # Split
+            ids_tr, ids_val, y_tr, y_val = train_test_split(
+                ids, labels, test_size=0.2, random_state=self.args.seed, stratify=labels
+            )
+
+            X_list = [X_list[id] for id in ids_tr]
+            labels = y_tr
+
+            print("Len featurs vs labels: ", len(X_list), len(labels))
+            print("Split: ", len(ids), len(ids_tr))
+
+            self.args.test_seq_ids = {seq_ids[id] for id in ids_tr}
+
+        print("Max seq leng percentile: ", self.args.pad_percentile)
         max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
 
         min_len = int(0.25 * max_seq_len)

@@ -75,7 +75,7 @@ def data_provider(args, flag):
             num_workers=args.num_workers,
             drop_last=drop_last,
             # collate_fn=lambda x: collate_fn(x, max_len=args.seq_len),
-            collate_fn=partial(collate_fn, data_set.max_seq_len),
+            collate_fn=partial(collate_fn, max_len=data_set.max_seq_len),
         )
         return data_set, data_loader
     else:

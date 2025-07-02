@@ -142,6 +142,7 @@ class Exp_Classification(Exp_Basic):
 
     def train(self, setting):
         train_data, train_loader = self.train_data, self.train_loader
+        # train_data0, train_loader0 = self.train_data, self.train_loader
         vali_data, vali_loader = self.vali_data, self.vali_loader
 
         path = os.path.join(self.args.checkpoints, setting)
@@ -214,7 +215,9 @@ class Exp_Classification(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            # train_loss0, train_accuracy = self.vali(train_data, train_loader, criterion)
+            # train_loss0, train_accuracy = self.vali(
+            #     train_data0, train_loader0, criterion
+            # )
             vali_loss, val_accuracy = self.vali(vali_data, vali_loader, criterion)
             # test_loss, test_accuracy = self.vali(test_data, test_loader, criterion)
 
