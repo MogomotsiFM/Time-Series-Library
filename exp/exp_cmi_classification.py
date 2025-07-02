@@ -107,37 +107,37 @@ class Exp_CMI_Classification(Exp_Classification):
                     # This ensures that each sequence in a batch is used at least once
                     # A better solution is to use the subsequence that yields the highest score
                     # print("s: ", start)
-                    if True or start > 0:
-                        seq_len = torch.sum(m, dim=1)  # batch, seq_len => batch
-                        min_seq_len_mask = torch.greater_equal(
-                            seq_len, 0.5 * self.args.max_seq_len
+                    # if True or start > 0:
+                    seq_len = torch.sum(m, dim=1)  # batch, seq_len => batch
+                    min_seq_len_mask = torch.greater_equal(
+                        seq_len, 0.5 * self.args.max_seq_len
+                    )
+
+                    min_seq_len_mask = torch.logical_or(
+                        min_seq_len_mask, torch.tensor([start]) == 0
+                    )
+
+                    if not torch.any(min_seq_len_mask):
+                        break
+
+                    outputs = self.model(b, m, None, None)
+
+                    windowed_preds.append(
+                        torch.softmax(
+                            torch.reshape(outputs, (-1, 1, self.args.c_out)),
+                            dim=-1,
                         )
+                    )
 
-                        min_seq_len_mask = torch.logical_or(
-                            min_seq_len_mask, torch.tensor([start]) == 0
-                        )
+                    outputs = outputs[min_seq_len_mask]
 
-                        if not torch.any(min_seq_len_mask):
-                            break
+                    pred = outputs.detach().cpu()
 
-                        outputs = self.model(b, m, None, None)
+                    label = label[min_seq_len_mask]
+                    # else:
+                    #    outputs = self.model(b, m, None, None)
 
-                        windowed_preds.append(
-                            torch.softmax(
-                                torch.reshape(outputs, (-1, 1, self.args.c_out)),
-                                dim=-1,
-                            )
-                        )
-
-                        outputs = outputs[min_seq_len_mask]
-
-                        pred = outputs.detach().cpu()
-
-                        label = label[min_seq_len_mask]
-                    else:
-                        outputs = self.model(b, m, None, None)
-
-                        pred = outputs.detach().cpu()
+                    #    pred = outputs.detach().cpu()
 
                     loss = criterion(pred, label.long().squeeze(-1).cpu())
                     total_loss.append(loss)
@@ -145,7 +145,9 @@ class Exp_CMI_Classification(Exp_Classification):
                     preds.append(outputs.detach())
                     trues.append(label)
 
-                pred0 = Exp_CMI_Classification.select_best_predictions(windowed_preds)
+                pred0 = Exp_CMI_Classification.select_best_predictions(
+                    windowed_preds, strategy="max"
+                )
                 loss0 = criterion(pred0, label0.long().squeeze(-1).cpu())
                 total_win_loss.append(loss0)
 
@@ -186,7 +188,7 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @staticmethod
     def select_best_predictions(
-        windowed_preds: List[torch.Tensor], strategy: Literal["max", "mode"]
+        windowed_preds: List[torch.Tensor], strategy: Literal["max", "mode"] = "mode"
     ):
         """
         For validation purposes
