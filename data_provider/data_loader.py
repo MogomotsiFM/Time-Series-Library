@@ -980,14 +980,14 @@ class CMILoader(UEAloader):
         """
         print("Reading data")
         if flag in ["TRAIN", "VALI"]:
-            df = pd.read_csv(f"{root_path}\\train.csv")
+            df = pd.read_csv(root_path / "train.csv")
 
             le = LabelEncoder()
             df["gesture_int"] = le.fit_transform(df["gesture"])
 
             df = df[df["behavior"] == "Performs gesture"]
         else:
-            df = pd.read_csv(f"{root_path}\\test.csv")
+            df = pd.read_csv(root_path / "test.csv")
 
         df = df.dropna()
 
