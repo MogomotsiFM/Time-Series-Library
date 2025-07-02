@@ -973,6 +973,13 @@ class CMILoader(UEAloader):
         super().__init__(args, root_path, [data_path], limit_size, flag)
 
     @override
+    def __getitem__(self, ind):
+        batch_x = self.feature_df.loc[self.all_IDs[ind]].values
+        labels = self.labels_df.loc[self.all_IDs[ind]].values
+
+        return torch.from_numpy(batch_x), torch.from_numpy(labels)
+
+    @override
     def load_all(self, root_path, file_list=None, flag=None):
         """
         The differences between this and the parent are that:
