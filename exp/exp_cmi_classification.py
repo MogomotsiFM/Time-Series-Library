@@ -20,6 +20,7 @@ import warnings
 import numpy as np
 import pdb
 
+from typing import List
 from typing_extensions import override
 
 warnings.filterwarnings("ignore")
@@ -144,26 +145,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     preds.append(outputs.detach())
                     trues.append(label)
 
-                # print("Window: ", windowed_preds[0].shape)
-                w_preds = torch.cat(windowed_preds, dim=1)  # batch, window, classes(18)
-                # print("w_preds shape: ", w_preds.shape)
-                # batch, window (Recall that we scan the window of size max_seq_len across the sequence)
-                values, class_indices = torch.max(w_preds, dim=2)  # batch, window
-                # indices = torch.argmax(values, dim=-1) # batch
-                # classes = class_indices[indices]
-                most_common_class, indices = torch.mode(class_indices, dim=-1)  # batch
-                # -----------------
-                values = values * (class_indices == most_common_class).int()
-                indices = torch.argmax(values, dim=-1)
-                # -----------------
-                # print(
-                #    f"Windowed: shape={values.shape}  values={values}  indices={indices}"
-                # )
-                # print("True: ", label0.transpose(1, 0).shape)
-                pred0 = w_preds[torch.arange(len(indices)), indices, :]
-                # print("Pred0: ", pred0.shape)
-                # print("Label: ", label0.shape)
-                # print("\n\nMask: ", padding_mask, batch_x.shape)
+                pred0 = Exp_CMI_Classification.select_best_predictions(windowed_preds)
                 loss0 = criterion(pred0, label0.long().squeeze(-1).cpu())
                 total_win_loss.append(loss0)
 
@@ -200,3 +182,38 @@ class Exp_CMI_Classification(Exp_Classification):
 
     def test(self, setting, test=0):
         pass
+
+    @staticmethod
+    def select_best_predictions(windowed_preds: List[torch.Tensor]):
+        """
+        For validation purposes
+        During validation we scan a window of size max_seq_len across each of the samples and pass it through
+        the model. Each of these windows estimates a class.
+
+        This method implements a strategy for selecting one of these estimates
+        """
+        # print("Window: ", windowed_preds[0].shape)
+        w_preds = torch.cat(windowed_preds, dim=1)  # batch, window, classes(18)
+        # print("w_preds shape: ", w_preds.shape)
+        #
+        # batch, window (Recall that we scan the window of size max_seq_len across the sequence)
+        values, class_indices = torch.max(w_preds, dim=2)  # batch, window
+        # indices = torch.argmax(values, dim=-1) # batch
+        # classes = class_indices[indices]
+        most_common_class, indices = torch.mode(
+            class_indices, dim=-1, keepdim=True
+        )  # batch, 1
+        # -----------------
+        # print(
+        #    "Class indices: ", class_indices, "  Most common class: ", most_common_class
+        # )
+        values = values * (class_indices == most_common_class).int()
+        indices = torch.argmax(values, dim=-1)
+        # -----------------
+        # print(
+        #    f"Windowed: shape={values.shape}  values={values}  indices={indices}"
+        # )
+        # print("True: ", label0.transpose(1, 0).shape)
+        pred0 = w_preds[torch.arange(len(indices)), indices, :]
+
+        return pred0
