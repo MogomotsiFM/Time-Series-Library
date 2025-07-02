@@ -4,9 +4,10 @@ from data_provider.data_loader import CMILoader
 from torch.utils.data import random_split, DataLoader
 
 from functools import partial
+from typing import Union
 from types import SimpleNamespace
 
-from data_provider.uea import collate_fn
+from data_provider.uea import collate_fn, Normalizer
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, cal_accuracy
@@ -32,13 +33,15 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @override
     def _build_model(self):
+        normalizer = Normalizer()
         self.args.test_seq_ids = set()
 
         # model input depends on data
-        self.train_data, self.train_loader = self._get_data(flag="TRAIN")
+        self.train_data, self.train_loader = self._get_data(
+            flag="TRAIN", normalizer=normalizer
+        )
         self.vali_data, self.vali_loader = self._get_data(
-            flag="VALI",
-            max_seq_len=self.train_data.max_seq_len,
+            flag="VALI", max_seq_len=self.train_data.max_seq_len, normalizer=normalizer
         )
 
         self.args.max_seq_len = self.train_data.max_seq_len
@@ -54,7 +57,9 @@ class Exp_CMI_Classification(Exp_Classification):
         return model
 
     @override
-    def _get_data(self, flag, max_seq_len=0):
+    def _get_data(
+        self, flag, max_seq_len=0, normalizer: Union[Normalizer, None] = None
+    ):
         shuffle_flag = False if (flag == "vali" or flag == "VALI") else True
         # batch_size = 1 if (flag == "vali" or flag == "VALI") else self.args.batch_size
         batch_size = self.args.batch_size

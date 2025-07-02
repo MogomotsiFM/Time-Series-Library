@@ -18,7 +18,7 @@ import warnings
 from utils.augmentation import run_augmentation_single
 
 from typing_extensions import override
-from typing import Literal, List, Set
+from typing import Literal, List, Union
 
 warnings.filterwarnings("ignore")
 
@@ -825,7 +825,15 @@ class UEAloader(Dataset):
             (Moreover, script argument overrides this attribute)
     """
 
-    def __init__(self, args, root_path, file_list=None, limit_size=None, flag=None):
+    def __init__(
+        self,
+        args,
+        root_path,
+        file_list=None,
+        limit_size=None,
+        flag=None,
+        normalizer: Union[Normalizer, None] = None,
+    ):
         self.args = args
         self.root_path = root_path
         self.flag = flag
@@ -848,8 +856,9 @@ class UEAloader(Dataset):
         self.feature_df = self.all_df
 
         # pre_process
-        normalizer = Normalizer()
-        self.feature_df = normalizer.normalize(self.feature_df)
+        if not normalizer is None:
+            self.feature_df = normalizer.normalize(self.feature_df)
+
         print(len(self.all_IDs))
 
     def load_all(self, root_path, file_list=None, flag=None):
@@ -969,8 +978,16 @@ class UEAloader(Dataset):
 
 
 class CMILoader(UEAloader):
-    def __init__(self, args, root_path, data_path, limit_size=None, flag=None):
-        super().__init__(args, root_path, [data_path], limit_size, flag)
+    def __init__(
+        self,
+        args,
+        root_path,
+        data_path,
+        limit_size=None,
+        flag=None,
+        normalizer: Union[Normalizer, None] = None,
+    ):
+        super().__init__(args, root_path, [data_path], limit_size, flag, normalizer)
 
     @override
     def __getitem__(self, ind):
@@ -989,14 +1006,14 @@ class CMILoader(UEAloader):
         """
         print("Reading data")
         if flag in ["TRAIN", "VALI"]:
-            df = pd.read_csv(root_path / "train.csv")
+            df = pd.read_csv(root_path + "/train.csv")
 
             le = LabelEncoder()
             df["gesture_int"] = le.fit_transform(df["gesture"])
 
             df = df[df["behavior"] == "Performs gesture"]
         else:
-            df = pd.read_csv(root_path / "test.csv")
+            df = pd.read_csv(root_path + "/test.csv")
 
         df = df.dropna()
 
