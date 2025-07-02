@@ -20,7 +20,7 @@ import warnings
 import numpy as np
 import pdb
 
-from typing import List
+from typing import List, Literal
 from typing_extensions import override
 
 warnings.filterwarnings("ignore")
@@ -154,14 +154,14 @@ class Exp_CMI_Classification(Exp_Classification):
 
         total_loss = np.average(total_loss)
         total_win_loss = np.average(total_win_loss)
-        print("Average windowed loss: ", total_win_loss)
+        # print("Average windowed loss: ", total_win_loss)
 
         all_win_preds = torch.cat(all_win_preds, dim=0)
         all_win_trues = torch.cat(all_win_trues, dim=0)
         predictions = torch.argmax(all_win_preds, dim=1).cpu().numpy()
         all_win_trues = all_win_trues.flatten().cpu().numpy()
         win_accuracy = cal_accuracy(predictions, all_win_trues)
-        print("Windowed accuracy: ", win_accuracy)
+        # print("Windowed accuracy: ", win_accuracy)
 
         print(len(preds), len(trues))
         print(preds[0].shape, trues[0].shape)
@@ -178,13 +178,16 @@ class Exp_CMI_Classification(Exp_Classification):
         accuracy = cal_accuracy(predictions, trues)
 
         self.model.train()
-        return total_loss, accuracy
+        # return total_loss, accuracy
+        return total_win_loss, win_accuracy
 
     def test(self, setting, test=0):
         pass
 
     @staticmethod
-    def select_best_predictions(windowed_preds: List[torch.Tensor]):
+    def select_best_predictions(
+        windowed_preds: List[torch.Tensor], strategy: Literal["max", "mode"]
+    ):
         """
         For validation purposes
         During validation we scan a window of size max_seq_len across each of the samples and pass it through
@@ -198,17 +201,21 @@ class Exp_CMI_Classification(Exp_Classification):
         #
         # batch, window (Recall that we scan the window of size max_seq_len across the sequence)
         values, class_indices = torch.max(w_preds, dim=2)  # batch, window
-        # indices = torch.argmax(values, dim=-1) # batch
-        # classes = class_indices[indices]
-        most_common_class, indices = torch.mode(
-            class_indices, dim=-1, keepdim=True
-        )  # batch, 1
-        # -----------------
-        # print(
-        #    "Class indices: ", class_indices, "  Most common class: ", most_common_class
-        # )
-        values = values * (class_indices == most_common_class).int()
-        indices = torch.argmax(values, dim=-1)
+        if strategy == "max":
+            indices = torch.argmax(values, dim=-1)  # batch
+            # classes = class_indices[indices]
+        else:  # strategy == "mode"
+            most_common_class, indices = torch.mode(
+                class_indices, dim=-1, keepdim=True
+            )  # batch, 1
+            # -----------------
+            # print(
+            #    "Class indices: ", class_indices, "  Most common class: ", most_common_class
+            # )
+            values = values * (class_indices == most_common_class).int()
+
+            indices = torch.argmax(values, dim=-1)
+
         # -----------------
         # print(
         #    f"Windowed: shape={values.shape}  values={values}  indices={indices}"
