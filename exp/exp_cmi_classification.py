@@ -237,6 +237,4 @@ class Exp_CMI_Classification(Exp_Classification):
 
             labels = labels.reshape((-1, 1)).repeat((len(windowed_preds), 1))
 
-            print("All: ", pred0.shape, labels.shape)
-
         return pred0, labels
