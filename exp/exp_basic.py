@@ -81,6 +81,7 @@ class Exp_Basic(object):
         return None
 
     def _acquire_device(self):
+        print("Exp_Basic: ", self.args.use_gpu, self.args.gpu_type)
         if self.args.use_gpu and self.args.gpu_type == "cuda":
             os.environ["CUDA_VISIBLE_DEVICES"] = (
                 str(self.args.gpu) if not self.args.use_multi_gpu else self.args.devices

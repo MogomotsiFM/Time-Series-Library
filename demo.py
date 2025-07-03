@@ -275,9 +275,8 @@ def intro():
     config["learning_rate"] = 0.00001
     config["des"] = "CMI"
     config["loss"] = "CrossEntropy"
-    config["lradj"] = (
-        "type3"  # Strategies to adjust the learning rate: type1, type2, type3, consine
-    )
+    # Strategies to adjust the learning rate: type1, type2, type3, consine
+    config["lradj"] = "type3"
     config["use_amp"] = False
     # parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     # parser.add_argument('--itr', type=int, default=1, help='experiments times')
@@ -303,7 +302,7 @@ def intro():
     # parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
     # de-stationary projector params
-    config["p_hidden_dims"] = [128]  # [128, 128]
+    config["p_hidden_dims"] = [256]  # [128, 128]
     config["p_hidden_layers"] = len(config["p_hidden_dims"])  # 2
     # parser.add_argument('--p_hidden_dims', type=int, nargs='+', default=[128, 128],
     #                    help='hidden layer dimensions of projector (List)')

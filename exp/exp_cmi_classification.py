@@ -103,6 +103,7 @@ class Exp_CMI_Classification(Exp_Classification):
         )
         return data_set, data_loader
 
+    @override
     def vali(self, vali_data, vali_loader, criterion):
         # Window
         total_win_loss = []
