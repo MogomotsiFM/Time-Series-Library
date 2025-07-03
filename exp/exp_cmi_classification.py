@@ -83,7 +83,7 @@ class Exp_CMI_Classification(Exp_Classification):
             args=self.args,
             root_path=self.args.root_path,
             data_path=self.args.data_path,
-            limit_size=100 * self.args.batch_size,
+            # limit_size=100 * self.args.batch_size,
             flag=flag,
             normalizer=normalizer,
             label_encoder=label_encoder,
