@@ -133,6 +133,7 @@ def intro():
     config = dict()
 
     # Original code parameters
+    config["strategy"] = strategy
     config["use_imu_only"] = True
     config["use_acceleration_only"] = True
     config["pad_percentile"] = pad_percentile
@@ -379,5 +380,6 @@ if __name__ == "__main__":
     train_epochs = 500
     batch_size = 32
     fix_seed = 1983
+    strategy = "all" # max, mode, all
 
     intro()
