@@ -859,7 +859,7 @@ class UEAloader(Dataset):
         self.feature_df = self.all_df
 
         # pre_process
-        if not normalizer is None:
+        if normalizer is not None:
             self.feature_df = normalizer.normalize(self.feature_df)
 
         print(len(self.all_IDs))

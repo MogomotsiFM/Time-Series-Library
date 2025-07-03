@@ -99,7 +99,7 @@ class Exp_CMI_Classification(Exp_Classification):
             shuffle=shuffle_flag,
             num_workers=self.args.num_workers,
             drop_last=True,
-            generator=torch.Generator(device="cuda"),
+            generator=torch.Generator(device=self.args.device),
             # collate_fn=lambda x: collate_fn(x, max_len=args.seq_len),
             collate_fn=partial(collate_fn, max_len=max_seq_len),
         )
@@ -131,8 +131,6 @@ class Exp_CMI_Classification(Exp_Classification):
 
                     # This ensures that each sequence in a batch is used at least once
                     # A better solution is to use the subsequence that yields the highest score
-                    # print("s: ", start)
-                    # if True or start > 0:
                     seq_len = torch.sum(m, dim=1)  # batch, seq_len => batch
                     min_seq_len_mask = torch.greater_equal(
                         seq_len, 0.5 * self.args.max_seq_len
@@ -159,10 +157,6 @@ class Exp_CMI_Classification(Exp_Classification):
                     pred = outputs.detach().cpu()
 
                     label = label[min_seq_len_mask]
-                    # else:
-                    #    outputs = self.model(b, m, None, None)
-
-                    #    pred = outputs.detach().cpu()
 
                     loss = criterion(pred, label.long().squeeze(-1).cpu())
                     total_loss.append(loss)
@@ -170,8 +164,8 @@ class Exp_CMI_Classification(Exp_Classification):
                     preds.append(outputs.detach())
                     trues.append(label)
 
-                pred0 = Exp_CMI_Classification.select_best_predictions(
-                    windowed_preds, strategy="max"
+                pred0, label0 = Exp_CMI_Classification.select_best_predictions(
+                    windowed_preds, label0, strategy="all"
                 )
                 loss0 = criterion(pred0.cpu(), label0.long().squeeze(-1).cpu())
                 total_win_loss.append(loss0)
@@ -181,14 +175,12 @@ class Exp_CMI_Classification(Exp_Classification):
 
         total_loss = np.average(total_loss)
         total_win_loss = np.average(total_win_loss)
-        # print("Average windowed loss: ", total_win_loss)
 
         all_win_preds = torch.cat(all_win_preds, dim=0)
         all_win_trues = torch.cat(all_win_trues, dim=0)
         predictions = torch.argmax(all_win_preds, dim=1).cpu().numpy()
         all_win_trues = all_win_trues.flatten().cpu().numpy()
         win_accuracy = cal_accuracy(predictions, all_win_trues)
-        # print("Windowed accuracy: ", win_accuracy)
 
         print(len(preds), len(trues))
         print(preds[0].shape, trues[0].shape)
@@ -213,7 +205,9 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @staticmethod
     def select_best_predictions(
-        windowed_preds: List[torch.Tensor], strategy: Literal["max", "mode"] = "mode"
+        windowed_preds: List[torch.Tensor],
+        labels: torch.Tensor,
+        strategy: Literal["all", "max", "mode"] = "mode",
     ):
         """
         For validation purposes
@@ -222,32 +216,27 @@ class Exp_CMI_Classification(Exp_Classification):
 
         This method implements a strategy for selecting one of these estimates
         """
-        # print("Window: ", windowed_preds[0].shape)
         w_preds = torch.cat(windowed_preds, dim=1)  # batch, window, classes(18)
-        # print("w_preds shape: ", w_preds.shape)
-        #
-        # batch, window (Recall that we scan the window of size max_seq_len across the sequence)
         values, class_indices = torch.max(w_preds, dim=2)  # batch, window
         if strategy == "max":
             indices = torch.argmax(values, dim=-1)  # batch
-            # classes = class_indices[indices]
-        else:  # strategy == "mode"
+
+            pred0 = w_preds[torch.arange(len(indices)), indices, :]
+        elif strategy == "mode":
             most_common_class, indices = torch.mode(
                 class_indices, dim=-1, keepdim=True
             )  # batch, 1
-            # -----------------
-            # print(
-            #    "Class indices: ", class_indices, "  Most common class: ", most_common_class
-            # )
             values = values * (class_indices == most_common_class).int()
 
             indices = torch.argmax(values, dim=-1)
 
-        # -----------------
-        # print(
-        #    f"Windowed: shape={values.shape}  values={values}  indices={indices}"
-        # )
-        # print("True: ", label0.transpose(1, 0).shape)
-        pred0 = w_preds[torch.arange(len(indices)), indices, :]
+            pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
-        return pred0
+        else:  # Use all the predictions
+            pred0 = torch.reshape(w_preds, (-1, w_preds.shape[-1]))
+
+            labels = labels.reshape((-1, 1)).repeat((len(windowed_preds), 1))
+
+            print("All: ", pred0.shape, labels.shape)
+
+        return pred0, labels
