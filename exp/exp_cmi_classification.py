@@ -91,6 +91,7 @@ class Exp_CMI_Classification(Exp_Classification):
 
         max_seq_len = max(max_seq_len, data_set.max_seq_len)
         print(type(self), f"Max seq len-{flag}: ", max_seq_len)
+        print("Device: ", self.args.device, self.device)
 
         data_loader = DataLoader(
             data_set,
