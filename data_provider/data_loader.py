@@ -833,10 +833,13 @@ class UEAloader(Dataset):
         limit_size=None,
         flag=None,
         normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
     ):
         self.args = args
         self.root_path = root_path
         self.flag = flag
+        self.label_encoder = label_encoder
+
         self.all_df, self.labels_df = self.load_all(
             root_path, file_list=file_list, flag=flag
         )
@@ -986,8 +989,11 @@ class CMILoader(UEAloader):
         limit_size=None,
         flag=None,
         normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
     ):
-        super().__init__(args, root_path, [data_path], limit_size, flag, normalizer)
+        super().__init__(
+            args, root_path, [data_path], limit_size, flag, normalizer, label_encoder
+        )
 
     @override
     def __getitem__(self, ind):
@@ -1008,8 +1014,15 @@ class CMILoader(UEAloader):
         if flag in ["TRAIN", "VALI"]:
             df = pd.read_csv(f"{root_path}/train.csv")
 
-            le = LabelEncoder()
-            df["gesture_int"] = le.fit_transform(df["gesture"])
+            # le = LabelEncoder()
+            assert (
+                not self.label_encoder is None
+            ), "LabelEncoder should be specified for training and validation."
+
+            if flag == "TRAIN":
+                df["gesture_int"] = self.label_encoder.fit_transform(df["gesture"])
+            else:
+                df["gesture_int"] = self.label_encoder.transform(df["gesture"])
 
             df = df[df["behavior"] == "Performs gesture"]
         else:

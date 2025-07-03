@@ -2,6 +2,7 @@ from exp.exp_classification import Exp_Classification
 from data_provider.data_loader import CMILoader
 
 from torch.utils.data import random_split, DataLoader
+from sklearn.preprocessing import LabelEncoder
 
 from functools import partial
 from typing import Union
@@ -22,7 +23,7 @@ import numpy as np
 import pdb
 
 from typing import List, Literal
-from typing_extensions import override
+from typing_extensions import override, overload
 
 warnings.filterwarnings("ignore")
 
@@ -34,14 +35,20 @@ class Exp_CMI_Classification(Exp_Classification):
     @override
     def _build_model(self):
         normalizer = Normalizer()
+        label_encoder = LabelEncoder()
+        # We use this to record the list of sequence ids that are used for training.
+        # The rest of the sequence ids are used for validation.
         self.args.test_seq_ids = set()
 
         # model input depends on data
         self.train_data, self.train_loader = self._get_data(
-            flag="TRAIN", normalizer=normalizer
+            flag="TRAIN", normalizer=normalizer, label_encoder=label_encoder
         )
         self.vali_data, self.vali_loader = self._get_data(
-            flag="VALI", max_seq_len=self.train_data.max_seq_len, normalizer=normalizer
+            flag="VALI",
+            max_seq_len=self.train_data.max_seq_len,
+            normalizer=normalizer,
+            label_encoder=label_encoder,
         )
 
         self.args.max_seq_len = self.train_data.max_seq_len
@@ -56,9 +63,17 @@ class Exp_CMI_Classification(Exp_Classification):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
 
-    @override
+    # @override
+    # def _get_data(self, flag):
+    #    return super()._get_data(flag)
+
+    # @overload
     def _get_data(
-        self, flag, max_seq_len=0, normalizer: Union[Normalizer, None] = None
+        self,
+        flag,
+        max_seq_len=0,
+        normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
     ):
         shuffle_flag = False if (flag == "vali" or flag == "VALI") else True
         # batch_size = 1 if (flag == "vali" or flag == "VALI") else self.args.batch_size
@@ -70,6 +85,8 @@ class Exp_CMI_Classification(Exp_Classification):
             data_path=self.args.data_path,
             # limit_size=100 * self.args.batch_size,
             flag=flag,
+            normalizer=normalizer,
+            label_encoder=label_encoder,
         )
 
         max_seq_len = max(max_seq_len, data_set.max_seq_len)
