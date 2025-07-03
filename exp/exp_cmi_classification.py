@@ -83,7 +83,7 @@ class Exp_CMI_Classification(Exp_Classification):
             args=self.args,
             root_path=self.args.root_path,
             data_path=self.args.data_path,
-            # limit_size=100 * self.args.batch_size,
+            limit_size=100 * self.args.batch_size,
             flag=flag,
             normalizer=normalizer,
             label_encoder=label_encoder,
@@ -235,6 +235,8 @@ class Exp_CMI_Classification(Exp_Classification):
         else:  # Use all the predictions
             pred0 = torch.reshape(w_preds, (-1, w_preds.shape[-1]))
 
-            labels = labels.reshape((-1, 1)).repeat((len(windowed_preds), 1))
+            labels = labels.reshape((-1, 1)).repeat_interleave(
+                repeats=w_preds.shape[1], dim=0
+            )
 
         return pred0, labels
