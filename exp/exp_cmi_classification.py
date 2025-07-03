@@ -99,7 +99,7 @@ class Exp_CMI_Classification(Exp_Classification):
             shuffle=shuffle_flag,
             num_workers=self.args.num_workers,
             drop_last=True,
-            generator=torch.Generator(device=self.device),
+            generator=torch.Generator(device="cuda"),
             # collate_fn=lambda x: collate_fn(x, max_len=args.seq_len),
             collate_fn=partial(collate_fn, max_len=max_seq_len),
         )
