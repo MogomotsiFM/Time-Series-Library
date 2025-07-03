@@ -173,7 +173,7 @@ class Exp_CMI_Classification(Exp_Classification):
                 pred0 = Exp_CMI_Classification.select_best_predictions(
                     windowed_preds, strategy="max"
                 )
-                loss0 = criterion(pred0, label0.long().squeeze(-1).cpu())
+                loss0 = criterion(pred0.cpu(), label0.long().squeeze(-1).cpu())
                 total_win_loss.append(loss0)
 
                 all_win_preds.append(pred0)
