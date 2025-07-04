@@ -236,7 +236,7 @@ class Exp_CMI_Classification(Exp_Classification):
         elif strategy == "sum":
             w_preds = torch.sum(w_preds, dim=1)  # batch, classes
 
-            w_preds = torch.softmax(w_preds, dim=-1)
+            pred0 = torch.softmax(w_preds, dim=-1)
 
         else:  # Use all the predictions
             pred0 = torch.reshape(w_preds, (-1, w_preds.shape[-1]))
