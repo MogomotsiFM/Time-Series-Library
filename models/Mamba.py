@@ -66,7 +66,7 @@ class Model(nn.Module):
         output = output.reshape(
             output.shape[0], -1
         )  # (batch_size, seq_length * d_model)
-        output = self.projection(output)  # (batch_size, num_classes)
+        output = self.out_layer(output)  # (batch_size, num_classes)
         return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
