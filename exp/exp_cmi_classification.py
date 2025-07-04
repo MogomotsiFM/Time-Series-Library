@@ -207,7 +207,7 @@ class Exp_CMI_Classification(Exp_Classification):
     def select_best_predictions(
         windowed_preds: List[torch.Tensor],
         labels: torch.Tensor,
-        strategy: Literal["all", "max", "mode"] = "mode",
+        strategy: Literal["all", "max", "mode", "sum"] = "mode",
     ):
         """
         For validation purposes
@@ -222,6 +222,7 @@ class Exp_CMI_Classification(Exp_Classification):
             indices = torch.argmax(values, dim=-1)  # batch
 
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
+
         elif strategy == "mode":
             most_common_class, indices = torch.mode(
                 class_indices, dim=-1, keepdim=True
@@ -231,6 +232,11 @@ class Exp_CMI_Classification(Exp_Classification):
             indices = torch.argmax(values, dim=-1)
 
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
+
+        elif strategy == "sum":
+            w_preds = torch.sum(w_preds, dim=1)  # batch, classes
+
+            w_preds = torch.softmax(w_preds, dim=-1)
 
         else:  # Use all the predictions
             pred0 = torch.reshape(w_preds, (-1, w_preds.shape[-1]))

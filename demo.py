@@ -133,6 +133,7 @@ def intro():
     config = dict()
 
     # Original code parameters
+    config["optimizer"] = optimizer
     config["strategy"] = strategy
     config["use_imu_only"] = True
     config["use_acceleration_only"] = True
@@ -365,7 +366,7 @@ def intro():
 
 
 if __name__ == "__main__":
-    # model name, options: [Autoformer, Transformer, TimesNet]
+    # model name, options: [Autoformer, Transformer, TimesNet, Mamba, TemporalFusionTransformer]
     model_name = "Transformer"
     num_classes = 18
     seq_len = 35
@@ -380,6 +381,7 @@ if __name__ == "__main__":
     train_epochs = 500
     batch_size = 32
     fix_seed = 1983
-    strategy = "all"  # max, mode, all
+    strategy = "sum"  # max, mode, all, sum
+    optimizer = "sgd"  # adam, sgd
 
     intro()
