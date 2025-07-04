@@ -367,7 +367,7 @@ def intro():
 
 if __name__ == "__main__":
     # model name, options: [Autoformer, Transformer, TimesNet, Mamba, TemporalFusionTransformer]
-    model_name = "Transformer"
+    model_name = "Mamba"
     num_classes = 18
     seq_len = 35
     pad_percentile = 0.95

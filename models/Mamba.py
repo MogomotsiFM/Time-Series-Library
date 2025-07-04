@@ -53,7 +53,7 @@ class Model(nn.Module):
 
     def classification(self, x_enc, x_mark_enc):
         # Embedding
-        enc_out = self.enc_embedding(x_enc, None)
+        enc_out = self.embedding(x_enc, None)
         # enc_out, attns = self.encoder(enc_out, attn_mask=None)
         enc_out = self.mamba(enc_out)
 
