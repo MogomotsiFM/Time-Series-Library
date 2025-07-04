@@ -380,6 +380,6 @@ if __name__ == "__main__":
     train_epochs = 500
     batch_size = 32
     fix_seed = 1983
-    strategy = "mode"  # max, mode, all
+    strategy = "all"  # max, mode, all
 
     intro()
