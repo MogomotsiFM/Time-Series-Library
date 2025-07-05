@@ -294,7 +294,7 @@ def intro():
     # GPU
     config["use_gpu"] = True
     config["gpu"] = 0
-    config["gpu_type"] = device
+    config["gpu_type"] = "cuda"
     config["use_multi_gpu"] = False
     config["devices"] = "0"
     # parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
@@ -367,7 +367,7 @@ def intro():
 
 if __name__ == "__main__":
     # model name, options: [Autoformer, Transformer, TimesNet, Mamba, TemporalFusionTransformer]
-    model_name = "Mamba"
+    model_name = "Transformer"
     num_classes = 18
     seq_len = 35
     pad_percentile = 0.95
@@ -381,7 +381,7 @@ if __name__ == "__main__":
     train_epochs = 500
     batch_size = 32
     fix_seed = 1983
-    strategy = "sum"  # max, mode, all, sum
+    strategy = "mode"  # max, mode, all, sum
     optimizer = "sgd"  # adam, sgd
 
     intro()
