@@ -229,7 +229,12 @@ class Exp_CMI_Classification(Exp_Classification):
             most_common_class, indices = torch.mode(
                 class_indices, dim=-1, keepdim=True
             )  # batch, 1
-            values = values * (class_indices == most_common_class).int()
+            # values = values * (class_indices == most_common_class).int()
+            values = torch.masked_fill(
+                values,
+                torch.logical_not(class_indices == most_common_class),
+                torch.tensor(float("-inf")),
+            )
 
             indices = torch.argmax(values, dim=-1)
 
