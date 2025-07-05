@@ -292,7 +292,7 @@ def intro():
     # parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 
     # GPU
-    config["use_gpu"] = True
+    config["use_gpu"] = False
     config["gpu"] = 0
     config["gpu_type"] = "cuda"
     config["use_multi_gpu"] = False

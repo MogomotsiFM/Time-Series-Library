@@ -1066,7 +1066,7 @@ class CMILoader(UEAloader):
         self.args.d_model = 8 * int(math.pow(2, math.ceil(n + 2)))
         # self.args.d_ff = np.maximum(64, 4 * self.args.enc_in)
         # self.args.d_ff = 4 * self.args.enc_in
-        self.args.d_ff = 4 * self.args.d_model
+        self.args.d_ff = 2 * self.args.d_model
 
         new_columns = ["sequence_id", "gesture_int"]
         new_columns.extend(feature_cols)
