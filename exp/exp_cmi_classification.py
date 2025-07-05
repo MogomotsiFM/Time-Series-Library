@@ -57,6 +57,8 @@ class Exp_CMI_Classification(Exp_Classification):
         self.args.pred_len = 0
         self.args.enc_in = self.train_data.feature_df.shape[1]
         self.args.num_class = len(self.train_data.class_names)
+
+        print("Model parameters: ", self.args)
         # model init
         model = self.model_dict[self.args.model].Model(self.args).float()
         if self.args.use_multi_gpu and self.args.use_gpu:
