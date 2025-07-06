@@ -58,6 +58,7 @@ class Exp_CMI_Classification(Exp_Classification):
         self.args.enc_in = self.train_data.feature_df.shape[1]
         self.args.num_class = len(self.train_data.class_names)
 
+        self.args.test_seq_ids = set()
         print("Model parameters: ", self.args)
         # model init
         model = self.model_dict[self.args.model].Model(self.args).float()
