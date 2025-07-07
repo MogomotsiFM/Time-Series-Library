@@ -31,7 +31,7 @@ class moving_avg(nn.Module):
         # stride == 1 is true
         assert kernel_size % 2 == 1, "kernel_size should be odd"
         assert stride == 1, "stride ==1 should be True"
-        padding = (kernel_size - 1) // 2
+        padding = (kernel_size - 1) // 4
         self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=padding)
 
     def forward(self, x):
