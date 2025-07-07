@@ -30,9 +30,9 @@ class moving_avg(nn.Module):
         # padding = (kernel - 1) / 2
         # stride == 1 is true
         assert kernel_size % 2 == 1, "kernel_size should be odd"
-        assert stride == 1, "stride ==1 should be True"
-        padding = (kernel_size - 1) // 4
-        self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=padding)
+        # assert stride == 1, "stride ==1 should be True"
+        # padding = (kernel_size - 1) // 4
+        self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=0)
 
     def forward(self, x):
         # padding on the both ends of time series
