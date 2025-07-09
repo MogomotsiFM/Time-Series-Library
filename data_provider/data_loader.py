@@ -1089,6 +1089,17 @@ class CMILoader(UEAloader):
         self.max_seq_len = max_seq_len
         print("Max seq lenght: ", self.max_seq_len)
 
+        projection_dim = self.args.d_model * max_seq_len
+        self.args.p_hidden_dims = [
+            projection_dim,
+            (
+                projection_dim // 2
+                if projection_dim > (2 * self.args.c_out)
+                else projection_dim
+            ),
+        ]
+        self.args.p_hidden_layers = len(self.args.p_hidden_dims)
+
         all_df = pd.concat(Xf, axis=0)
         print(all_df.columns)
 
