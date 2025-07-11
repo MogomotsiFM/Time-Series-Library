@@ -58,6 +58,17 @@ class Exp_CMI_Classification(Exp_Classification):
         self.args.enc_in = self.train_data.feature_df.shape[1]
         self.args.num_class = len(self.train_data.class_names)
 
+        projection_dim = self.args.d_model * self.args.max_seq_len
+        self.args.p_hidden_dims = [
+            projection_dim,
+            (
+                projection_dim // 2
+                if projection_dim > (2 * self.args.c_out)
+                else projection_dim
+            ),
+        ]
+        self.args.p_hidden_layers = len(self.args.p_hidden_dims)
+
         self.args.test_seq_ids = set()
         print("Model parameters: ", self.args)
         # model init
