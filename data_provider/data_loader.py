@@ -1084,10 +1084,13 @@ class CMILoader(UEAloader):
         all_df = pd.DataFrame(columns=new_columns)  # , dtype=dtypes)
         all_df = all_df.astype(dtypes)
 
-        max_seq_len, Xf, labels = self.normalize_seq_len(df, feature_cols, flag)
+        max_seq_len, min_seq_len, Xf, labels = self.normalize_seq_len(
+            df, feature_cols, flag
+        )
 
         self.max_seq_len = max_seq_len
         print("Max seq lenght: ", self.max_seq_len)
+        print("Min seq length: ", min_seq_len)
 
         projection_dim = self.args.d_model * max_seq_len
         self.args.p_hidden_dims = [
@@ -1163,8 +1166,9 @@ class CMILoader(UEAloader):
 
         if flag == "VALI":  # Validation dataset
             max_seq_len = np.max(lens)
+            min_seq_len = np.min(lens)
 
-            return max_seq_len, X_list, labels
+            return max_seq_len, min_seq_len, X_list, labels
         else:  # flag == "TRAIN"
             # Split the data into training and validation sets.
             ids = list(range(len(X_list)))
@@ -1177,13 +1181,14 @@ class CMILoader(UEAloader):
             X_list = [X_list[id] for id in ids_tr]
             labels = y_tr
 
-            print("Len featurs vs labels: ", len(X_list), len(labels))
+            print("Len features vs labels: ", len(X_list), len(labels))
             print("Split: ", len(ids), len(ids_tr))
 
             self.args.test_seq_ids = {seq_ids[id] for id in ids_tr}
 
         print("Max seq leng percentile: ", self.args.pad_percentile)
         max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
+        min_seq_len = np.min(lens)
 
         min_len = int(0.25 * max_seq_len)
 
@@ -1236,4 +1241,4 @@ class CMILoader(UEAloader):
                     if index % 5000 == 0:
                         print(index)
 
-        return max_seq_len, Xf, new_labels
+        return max_seq_len, min_seq_len, Xf, new_labels
