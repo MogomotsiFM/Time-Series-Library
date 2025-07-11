@@ -117,6 +117,24 @@ class TimeFeatureEmbedding(nn.Module):
         return self.embed(x)
 
 
+class CMI_TimeFeatureEmbedding(nn.Module):
+    """
+    Measurements are received at the give frequency in milliseconds.
+    So, we can infer the time given the position of a measurement.
+    """
+
+    def __init__(self, d_model, max_seq_len, embed_type="timeF"):
+        super().__init__()
+        self.max_seq_len = max_seq_len
+        self.embed = nn.Linear(1, d_model, bias=False)
+
+    def forward(self, x):
+        # batch, seq_len, d_model
+        time = torch.arange(x.shape[1], dtype=torch.float)
+        output = self.embed(torch.reshape(time, (-1, 1)))
+        return torch.unsqueeze(output, dim=0)
+
+
 class DataEmbedding(nn.Module):
     def __init__(
         self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1, max_seq_len=5000
@@ -143,6 +161,30 @@ class DataEmbedding(nn.Module):
                 + self.temporal_embedding(x_mark)
                 + self.position_embedding(x)
             )
+        return self.dropout(x)
+
+
+class CMI_DataEmbedding(nn.Module):
+    def __init__(
+        self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1, max_seq_len=5000
+    ):
+        super(CMI_DataEmbedding, self).__init__()
+
+        self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
+        self.position_embedding = PositionalEmbedding(
+            d_model=d_model, max_len=max_seq_len
+        )
+        self.temporal_embedding = CMI_TimeFeatureEmbedding(
+            d_model=d_model, max_seq_len=max_seq_len, embed_type=embed_type
+        )
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, x_mark):
+        x = (
+            self.value_embedding(x)
+            + self.temporal_embedding(x)
+            + self.position_embedding(x)
+        )
         return self.dropout(x)
 
 

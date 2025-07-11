@@ -376,12 +376,11 @@ if __name__ == "__main__":
     h: int = 1
     dropout: float = 0.1
     d_ff: int = 256
-    all_features = False  # Use all encoder output features for classification
     device = None
     train_epochs = 500
     batch_size = 32
     fix_seed = 1983
-    strategy = "mode"  # max, mode, all, sum
+    strategy = "max"  # max, mode, all, sum
     optimizer = "sgd"  # adam, sgd
 
     intro()
