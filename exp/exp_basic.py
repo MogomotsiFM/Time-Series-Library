@@ -32,10 +32,24 @@ from models import (
     MultiPatchFormer,
 )
 
+from sklearn.preprocessing import LabelEncoder
+
+from data_provider.uea import Normalizer
+
+from typing import Union
+
 
 class Exp_Basic(object):
-    def __init__(self, args):
+    def __init__(
+        self,
+        args,
+        normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
+    ):
         self.args = args
+        self.normalizer = normalizer
+        self.label_encoder = label_encoder
+
         self.model_dict = {
             "TimesNet": TimesNet,
             "Autoformer": Autoformer,

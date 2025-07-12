@@ -13,6 +13,10 @@ import numpy as np
 
 from types import SimpleNamespace
 
+from sklearn.preprocessing import LabelEncoder
+
+from data_provider.uea import Normalizer
+
 
 def wrapper(args):
     if torch.cuda.is_available() and args["use_gpu"]:
@@ -54,11 +58,14 @@ def wrapper(args):
     else:
         Exp = Exp_Long_Term_Forecast
 
+    normalizer = Normalizer()
+    label_encoder = LabelEncoder()
+
     if args["is_training"]:
         for ii in range(args["itr"]):
             # setting record of experiments
             # args = SimpleNamespace(**args)
-            exp = Exp(SimpleNamespace(**args))  # set experiments
+            exp = Exp(SimpleNamespace(**args), normalizer, label_encoder)
             setting = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
                 args["task_name"],
                 args["model_id"],

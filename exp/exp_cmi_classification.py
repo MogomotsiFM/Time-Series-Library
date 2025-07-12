@@ -29,26 +29,31 @@ warnings.filterwarnings("ignore")
 
 
 class Exp_CMI_Classification(Exp_Classification):
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(
+        self,
+        args,
+        normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
+    ):
+        super().__init__(args, normalizer, label_encoder)
 
     @override
     def _build_model(self):
-        normalizer = Normalizer()
-        label_encoder = LabelEncoder()
+        # normalizer = Normalizer()
+        # label_encoder = LabelEncoder()
         # We use this to record the list of sequence ids that are used for training.
         # The rest of the sequence ids are used for validation.
         self.args.test_seq_ids = set()
 
         # model input depends on data
         self.train_data, self.train_loader = self._get_data(
-            flag="TRAIN", normalizer=normalizer, label_encoder=label_encoder
+            flag="TRAIN", normalizer=self.normalizer, label_encoder=self.label_encoder
         )
         self.vali_data, self.vali_loader = self._get_data(
             flag="VALI",
             max_seq_len=self.train_data.max_seq_len,
-            normalizer=normalizer,
-            label_encoder=label_encoder,
+            normalizer=self.normalizer,
+            label_encoder=self.label_encoder,
         )
 
         self.args.max_seq_len = self.train_data.max_seq_len

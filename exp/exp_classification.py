@@ -3,7 +3,7 @@ from torch.utils.data import random_split, DataLoader
 from functools import partial
 from types import SimpleNamespace
 
-from data_provider.uea import collate_fn
+from data_provider.uea import collate_fn, Normalizer
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, cal_accuracy
@@ -16,12 +16,21 @@ import warnings
 import numpy as np
 import pdb
 
+from sklearn.preprocessing import LabelEncoder
+
+from typing import Union
+
 warnings.filterwarnings("ignore")
 
 
 class Exp_Classification(Exp_Basic):
-    def __init__(self, args):
-        super(Exp_Classification, self).__init__(args)
+    def __init__(
+        self,
+        args,
+        normalizer: Union[Normalizer, None] = None,
+        label_encoder: Union[LabelEncoder, None] = None,
+    ):
+        super(Exp_Classification, self).__init__(args, normalizer, label_encoder)
 
     def _build_model(self):
         # model input depends on data
