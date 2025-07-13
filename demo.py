@@ -256,14 +256,18 @@ def intro():
     config["activation"] = "gelu"
     # parser.add_argument('--activation', type=str, default='gelu', help='activation')
 
+    config["channel_independence"] = 1
     # parser.add_argument('--channel_independence', type=int, default=1,
-    #                    help='0: channel dependence 1: channel independence for FreTS model')
+    #                    help='0: channel dependence 1: channel independence for FreTS and TimeMixer models')
 
     config["decomp_method"] = "miving_avg"
     # parser.add_argument('--decomp_method', type=str, default='moving_avg',
     #                    help='method of series decompsition, only support moving_avg or dft_decomp')
 
-    config["use_norm"] = 1
+    config["use_norm"] = 0
+    # Used in the TimeMixer model to determine whether to normalize the data or not. If the data is already normalized then
+    # this can be set to False
+    # Actually, normalization is not used for classification
     # parser.add_argument('--use_norm', type=int, default=1, help='whether to use normalize; True 1 False 0')
 
     config["down_sampling"] = 0
@@ -373,7 +377,7 @@ def intro():
 
 
 if __name__ == "__main__":
-    # model name, options: [Autoformer, Transformer, TimesNet, Mamba, TemporalFusionTransformer]
+    # model name, options: [Autoformer, Transformer, TimesNet, TimeMixer, Mamba, TemporalFusionTransformer]
     model_name = "Transformer"
     num_classes = 18
     seq_len = 35
