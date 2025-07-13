@@ -95,6 +95,7 @@ class Model(nn.Module):
             configs.embed,
             configs.freq,
             configs.dropout,
+            configs.max_seq_len,
         )
         self.layer = configs.e_layers
         self.layer_norm = nn.LayerNorm(configs.d_model)
