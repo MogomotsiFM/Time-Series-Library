@@ -232,6 +232,23 @@ class DataEmbedding_wo_pos(nn.Module):
         return self.dropout(x)
 
 
+class CMI_DataEmbedding_wo_pos(nn.Module):
+    def __init__(
+        self, c_in, d_model, embed_type="fixed", dropout=0.1, max_seq_len=5000
+    ):
+        super(DataEmbedding_wo_pos, self).__init__()
+
+        self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
+        self.temporal_embedding = (
+            CMI_TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, max_seq_len=max_seq_len)
+        )
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, x_mark):
+        x = self.value_embedding(x) + self.temporal_embedding(x_mark)
+        return self.dropout(x)
+    
+
 class PatchEmbedding(nn.Module):
     def __init__(self, d_model, patch_len, stride, padding, dropout):
         super(PatchEmbedding, self).__init__()

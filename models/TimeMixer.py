@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from layers.Autoformer_EncDec import series_decomp
-from layers.Embed import DataEmbedding_wo_pos
+from layers.Embed import DataEmbedding_wo_pos, CMI_DataEmbedding_wo_pos
 from layers.StandardNorm import Normalize
 
 
@@ -205,8 +205,10 @@ class Model(nn.Module):
             self.enc_embedding = DataEmbedding_wo_pos(1, configs.d_model, configs.embed, configs.freq,
                                                       configs.dropout, max_len=configs.seq_len)
         else:
-            self.enc_embedding = DataEmbedding_wo_pos(configs.enc_in, configs.d_model, configs.embed, configs.freq,
-                                                      configs.dropout)
+            #self.enc_embedding = DataEmbedding_wo_pos(configs.enc_in, configs.d_model, configs.embed, configs.freq,
+            #                                          configs.dropout)
+            self.enc_embedding = CMI_DataEmbedding_wo_pos(configs.enc_in, configs.d_model, configs.embed,
+                                                      configs.dropout, configs.max_seq_len)
 
         self.layer = configs.e_layers
 
