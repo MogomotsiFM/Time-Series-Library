@@ -1200,24 +1200,11 @@ class CMILoader(UEAloader):
                 # Use this observation to generate new data
                 # This simulates a decoder only transformer that can ingest one token at a time.
                 # Actually, this approach slows down learning and inference :-(
-                x = seq
                 z = seq
-                for j in range(length, math.ceil(0.5 * max_seq_len), -2):
-                    x = x.copy()
-
-                    # x = x.iloc[:j, :]
-                    x = x[:j]
-                    idx = np.ones((x.shape[0],)) * index
-                    x.set_index(pd.Index(idx), inplace=True)
-                    Xf.append(x)
-
-                    new_labels.append(label)
-
-                    index = index + 1
-
-                    # Apply the same observation to the beginning of the sequence
+                #for j in range(length, math.ceil(0.5 * max_seq_len), -2):
+                for _ in range(max_seq_len, length):
                     z = z.copy()
-                    # z = z.iloc[1:, :]
+
                     z = z[1:]
                     idx = np.ones((z.shape[0],)) * index
                     z.set_index(pd.Index(idx), inplace=True)
