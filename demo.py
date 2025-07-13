@@ -236,6 +236,8 @@ def intro():
     config["d_ff"] = d_ff
     # parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 
+    # Used in TimeMixer model
+    config["moving_avg"] = 3
     # parser.add_argument('--moving_avg', type=int, default=25, help='window size of moving average')
 
     config["factor"] = 1
@@ -256,11 +258,11 @@ def intro():
     config["activation"] = "gelu"
     # parser.add_argument('--activation', type=str, default='gelu', help='activation')
 
-    config["channel_independence"] = 1
+    config["channel_independence"] = 0
     # parser.add_argument('--channel_independence', type=int, default=1,
     #                    help='0: channel dependence 1: channel independence for FreTS and TimeMixer models')
 
-    config["decomp_method"] = "miving_avg"
+    config["decomp_method"] = "dft_decomp" # Options: dft_decomp, moving_avg
     # parser.add_argument('--decomp_method', type=str, default='moving_avg',
     #                    help='method of series decompsition, only support moving_avg or dft_decomp')
 
@@ -270,9 +272,13 @@ def intro():
     # Actually, normalization is not used for classification
     # parser.add_argument('--use_norm', type=int, default=1, help='whether to use normalize; True 1 False 0')
 
-    config["down_sampling"] = 0
+    # Used in TimeMixer model
+    config["down_sampling_layers"] = 1
     # parser.add_argument('--down_sampling_layers', type=int, default=0, help='num of down sampling layers')
 
+    # Used in TimeMixer model
+    config["down_sampling_window"] = 1
+    config["down_sampling_method"] = "conv"
     # parser.add_argument('--down_sampling_window', type=int, default=1, help='down sampling window size')
     # parser.add_argument('--down_sampling_method', type=str, default=None,
     #                    help='down sampling method, only support avg, max, conv')
@@ -378,7 +384,7 @@ def intro():
 
 if __name__ == "__main__":
     # model name, options: [Autoformer, Transformer, TimesNet, TimeMixer, Mamba, TemporalFusionTransformer]
-    model_name = "Transformer"
+    model_name = "TimeMixer"
     num_classes = 18
     seq_len = 35
     pad_percentile = 0.95
@@ -392,6 +398,6 @@ if __name__ == "__main__":
     batch_size = 32
     fix_seed = 1983
     strategy = "max"  # max, mode, all, sum
-    optimizer = "sgd"  # adam, sgd
+    optimizer = "adam"  # adam, sgd
 
     intro()
