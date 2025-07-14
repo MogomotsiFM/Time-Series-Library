@@ -23,12 +23,19 @@ class Model(nn.Module):
         self.d_inner = configs.d_model * configs.expand
         self.dt_rank = math.ceil(configs.d_model / 16)
 
-        self.embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq, configs.dropout)
+        self.embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq, configs.dropout, configs.max_seq_len)
 
         self.layers = nn.ModuleList([ResidualBlock(configs, self.d_inner, self.dt_rank) for _ in range(configs.e_layers)])
         self.norm = RMSNorm(configs.d_model)
 
         self.out_layer = nn.Linear(configs.d_model, configs.c_out, bias=False)
+
+        if self.task_name == "classification":
+            self.act = F.gelu
+            self.dropout = nn.Dropout(configs.dropout)
+            self.out_layer = nn.Linear(
+                configs.d_model * configs.seq_len, configs.num_class, bias=False
+            )
 
     def forecast(self, x_enc, x_mark_enc):
         mean_enc = x_enc.mean(1, keepdim=True).detach()
@@ -45,11 +52,32 @@ class Model(nn.Module):
 
         x_out = x_out * std_enc + mean_enc
         return x_out
+    
+    def classification(self, x_enc, x_mark_enc):
+        # Embedding
+        enc_out = self.embedding(x_enc, None)
+        for layer in self.layers:
+            enc_out = layer(enc_out)
+
+        # Output
+        output = self.act(
+            enc_out
+        )  # the output transformer encoder/decoder embeddings don't include non-linearity
+        output = self.dropout(output)
+        output = output * x_mark_enc.unsqueeze(-1)  # zero-out padding embeddings
+        output = output.reshape(
+            output.shape[0], -1
+        )  # (batch_size, seq_length * d_model)
+        output = self.out_layer(output)  # (batch_size, num_classes)
+        return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         if self.task_name in ['short_term_forecast', 'long_term_forecast']:
             x_out = self.forecast(x_enc, x_mark_enc)
             return x_out[:, -self.pred_len:, :]
+        if self.task_name == 'classification':
+            x_out = self.classification(x_enc, x_mark_enc)
+            return x_out
 
 
 class ResidualBlock(nn.Module):
