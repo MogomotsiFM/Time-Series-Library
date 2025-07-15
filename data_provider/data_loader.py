@@ -1097,9 +1097,13 @@ class CMILoader(UEAloader):
         print("Data shape: ", all_df.shape)
         print("Head\n", all_df.head(10))
         print("Tail\n", all_df.tail(10))
-        print("Middle\n", all_df[100])
-        print("Middle\n", all_df[200])
-        print("Middle\n", all_df[400])
+        try:
+            print("Middle\n", all_df[100])
+            print("Middle\n", all_df[200])
+            print("Middle\n", all_df[400])
+        except Exception as exp:
+            print("Some of these keys were not found!")
+        
         all_df.drop(columns=["sequence_counter"])
 
         labels = pd.Series(labels, dtype="category")
