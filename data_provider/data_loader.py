@@ -1104,7 +1104,7 @@ class CMILoader(UEAloader):
         except Exception as exp:
             print("Some of these keys were not found!")
         
-        all_df.drop(columns=["sequence_counter"])
+        all_df.drop(columns=["sequence_counter"], inplace=True)
 
         labels = pd.Series(labels, dtype="category")
         self.class_names = labels.cat.categories
