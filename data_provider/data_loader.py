@@ -1013,8 +1013,10 @@ class CMILoader(UEAloader):
         print("Reading data")
         if flag in ["TRAIN", "VALI"]:
             df = pd.read_csv(f"{root_path}/train.csv")
+            demo = pd.read_csv(f"{root_path}/train_demographics.csv")
 
-            # le = LabelEncoder()
+            df = pd.merge(df, demo, on="subject")
+
             assert (
                 not self.label_encoder is None
             ), "LabelEncoder should be specified for training and validation."
@@ -1031,27 +1033,11 @@ class CMILoader(UEAloader):
         df = df.dropna()
 
         # Feature list
-        meta_cols = {
-            "gesture",
-            "gesture_int",
-            "sequence_type",
-            "behavior",
-            "orientation",
-            "row_id",
-            "subject",
-            "phase",
-            "sequence_id",
-            "sequence_counter",
-        }
-        feature_cols = [c for c in df.columns if c not in meta_cols]
-
         imu_cols = [
-            c
-            for c in feature_cols
-            if not (c.startswith("thm_") or c.startswith("tof_"))
+            c for c in df.columns if (c.startswith("rot_") or c.startswith("acc_"))
         ]
         tof_cols = [
-            c for c in feature_cols if c.startswith("thm_") or c.startswith("tof_")
+            c for c in df.columns if c.startswith("thm_") or c.startswith("tof_")
         ]
 
         if self.args.use_imu_only:
@@ -1059,6 +1045,10 @@ class CMILoader(UEAloader):
 
             if self.args.use_acceleration_only:
                 feature_cols = ["acc_x", "acc_y", "acc_z"]
+        else:
+            feature_cols = imu_cols + tof_cols
+
+        feature_cols.extend(["handedness", "sequence_counter"])
 
         self.args.enc_in = len(feature_cols)
         n = math.log(self.args.enc_in, 2)
@@ -1107,6 +1097,10 @@ class CMILoader(UEAloader):
         print("Data shape: ", all_df.shape)
         print("Head\n", all_df.head(10))
         print("Tail\n", all_df.tail(10))
+        print("Middle\n", all_df[100])
+        print("Middle\n", all_df[200])
+        print("Middle\n", all_df[400])
+        all_df.drop(columns=["sequence_counter"])
 
         labels = pd.Series(labels, dtype="category")
         self.class_names = labels.cat.categories
