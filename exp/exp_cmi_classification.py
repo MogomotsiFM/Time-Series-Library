@@ -249,9 +249,9 @@ class Exp_CMI_Classification(Exp_Classification):
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
             mask = torch.cat(masks, dim=-1)
-            print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
+            #print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
             mask = mask[torch.arange(len(indices)), indices]
-            print("Mask: ", mask.shape)
+            #print("Mask: ", mask.shape)
             
             return pred0[mask], labels[mask]
 
@@ -271,9 +271,9 @@ class Exp_CMI_Classification(Exp_Classification):
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
             mask = torch.cat(masks, dim=-1)
-            print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
+            #print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
             mask = mask[torch.arange(len(indices)), indices]
-            print("Mask: ", mask.shape)
+            #print("Mask: ", mask.shape)
             
             return pred0[mask], labels[mask]
 
@@ -292,9 +292,9 @@ class Exp_CMI_Classification(Exp_Classification):
             )
 
             mask = torch.cat(masks, dim=0)
-            print("\nMasks: ", mask.shape, "Preds: ", pred0.shape, "Labels: ", labels.shape)
+            #print("\nMasks: ", mask.shape, "Preds: ", pred0.shape, "Labels: ", labels.shape)
 
             mask = torch.squeeze(mask, dim=-1)
-            print("Mask: ", mask.shape)
+            #print("Mask: ", mask.shape)
 
             return pred0[mask], labels[mask]
