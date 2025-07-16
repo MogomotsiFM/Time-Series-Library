@@ -138,6 +138,7 @@ class Exp_CMI_Classification(Exp_Classification):
         with torch.no_grad():
             for i, (batch_x, label0, padding_mask) in enumerate(vali_loader):
                 windowed_preds = []
+                masks = []
                 for end in range(self.args.max_seq_len, vali_data.max_seq_len):
                     start = end - self.args.max_seq_len
 
@@ -151,6 +152,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     # This ensures that each sequence in a batch is used at least once
                     # A better solution is to use the subsequence that yields the highest score
                     seq_len = torch.sum(m, dim=1)  # batch, seq_len => batch
+                    #seq_len = torch.sum(m, dim=1, keepdim=True)  # batch, seq_len => batch
                     min_seq_len_mask = torch.greater_equal(
                         seq_len, 0.5 * self.args.max_seq_len
                     )
@@ -171,6 +173,8 @@ class Exp_CMI_Classification(Exp_Classification):
                         )
                     )
 
+                    masks.append(min_seq_len_mask)
+
                     outputs = outputs[min_seq_len_mask]
 
                     pred = outputs.detach().cpu()
@@ -184,7 +188,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     trues.append(label)
 
                 pred0, label0 = Exp_CMI_Classification.select_best_predictions(
-                    windowed_preds, label0, strategy=self.args.strategy
+                    windowed_preds, label0, masks, strategy=self.args.strategy
                 )
                 loss0 = criterion(pred0.cpu(), label0.long().squeeze(-1).cpu())
                 total_win_loss.append(loss0)
@@ -226,6 +230,7 @@ class Exp_CMI_Classification(Exp_Classification):
     def select_best_predictions(
         windowed_preds: List[torch.Tensor],
         labels: torch.Tensor,
+        masks: List[torch.Tensor],
         strategy: Literal["all", "max", "mode", "sum"] = "mode",
     ):
         """
@@ -235,12 +240,20 @@ class Exp_CMI_Classification(Exp_Classification):
 
         This method implements a strategy for selecting one of these estimates
         """
+        masks = [m.view((-1, 1)) for m in masks]
         w_preds = torch.cat(windowed_preds, dim=1)  # batch, window, classes(18)
         values, class_indices = torch.max(w_preds, dim=2)  # batch, window
         if strategy == "max":
             indices = torch.argmax(values, dim=-1)  # batch
 
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
+
+            mask = torch.cat(masks, dim=-1)
+            print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
+            mask = mask[torch.arange(len(indices)), indices]
+            print("Mask: ", mask.shape)
+            
+            return pred0[mask], labels[mask]
 
         elif strategy == "mode":
             most_common_class, indices = torch.mode(
@@ -257,10 +270,19 @@ class Exp_CMI_Classification(Exp_Classification):
 
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
+            mask = torch.cat(masks, dim=-1)
+            print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
+            mask = mask[torch.arange(len(indices)), indices]
+            print("Mask: ", mask.shape)
+            
+            return pred0[mask], labels[mask]
+
         elif strategy == "sum":
             w_preds = torch.sum(w_preds, dim=1)  # batch, classes
 
             pred0 = torch.softmax(w_preds, dim=-1)
+
+            return pred0, labels
 
         else:  # Use all the predictions
             pred0 = torch.reshape(w_preds, (-1, w_preds.shape[-1]))
@@ -269,4 +291,10 @@ class Exp_CMI_Classification(Exp_Classification):
                 repeats=w_preds.shape[1], dim=0
             )
 
-        return pred0, labels
+            mask = torch.cat(masks, dim=0)
+            print("\nMasks: ", mask.shape, "Preds: ", pred0.shape, "Labels: ", labels.shape)
+
+            mask = torch.squeeze(mask, dim=-1)
+            print("Mask: ", mask.shape)
+
+            return pred0[mask], labels[mask]
