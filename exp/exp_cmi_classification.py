@@ -8,7 +8,7 @@ from functools import partial
 from typing import Union
 from types import SimpleNamespace
 
-from data_provider.uea import collate_fn, Normalizer
+from data_provider.uea import collate_fn, smallest_pow_2_greater_than, Normalizer
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, cal_accuracy
@@ -63,7 +63,7 @@ class Exp_CMI_Classification(Exp_Classification):
         self.args.enc_in = self.train_data.feature_df.shape[1]
         self.args.num_class = len(self.train_data.class_names)
 
-        projection_dim = self.args.d_model * self.args.max_seq_len
+        projection_dim = smallest_pow_2_greater_than(self.args.d_model * self.args.max_seq_len)
         self.args.p_hidden_dims = [
             projection_dim,
             (
@@ -253,7 +253,12 @@ class Exp_CMI_Classification(Exp_Classification):
             mask = mask[torch.arange(len(indices)), indices]
             #print("Mask: ", mask.shape)
             
-            return pred0[mask], labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+            pred0 = pred0[mask]
+            labels = labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+            
+            return pred0, labels
 
         elif strategy == "mode":
             most_common_class, indices = torch.mode(
@@ -275,7 +280,12 @@ class Exp_CMI_Classification(Exp_Classification):
             mask = mask[torch.arange(len(indices)), indices]
             #print("Mask: ", mask.shape)
             
-            return pred0[mask], labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+            pred0 = pred0[mask]
+            labels = labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+
+            return pred0, labels
 
         elif strategy == "sum":
             w_preds = torch.sum(w_preds, dim=1)  # batch, classes
@@ -297,4 +307,9 @@ class Exp_CMI_Classification(Exp_Classification):
             mask = torch.squeeze(mask, dim=-1)
             #print("Mask: ", mask.shape)
 
-            return pred0[mask], labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+            pred0 = pred0[mask]
+            labels = labels[mask]
+            print("Shapes: ", pred0.shape, labels.shape)
+
+            return pred0, labels

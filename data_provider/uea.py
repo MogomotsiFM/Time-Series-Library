@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import pandas as pd
 import torch
@@ -145,3 +146,9 @@ def subsample(y, limit=256, factor=2):
     if len(y) > limit:
         return y[::factor].reset_index(drop=True)
     return y
+
+def smallest_pow_2_greater_than(num: int):
+    n = math.log(num, 2)
+    n = math.ceil(n)
+
+    return int(math.pow(2, n))
