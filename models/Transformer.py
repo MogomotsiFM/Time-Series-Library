@@ -25,8 +25,8 @@ class Model(nn.Module):
         self.task_name = configs.task_name
         self.pred_len = configs.pred_len
         # Embedding
-        # self.enc_embedding = DataEmbedding(
-        self.enc_embedding = CMI_DataEmbedding(
+        self.enc_embedding = DataEmbedding(
+        #self.enc_embedding = CMI_DataEmbedding(
             configs.enc_in,
             configs.d_model,
             configs.embed,
