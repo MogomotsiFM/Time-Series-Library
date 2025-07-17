@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 
 from utils.timefeatures import time_features
 from data_provider.m4 import M4Dataset, M4Meta
-from data_provider.uea import subsample, interpolate_missing, Normalizer
+from data_provider.uea import subsample, interpolate_missing, smallest_pow_2_greater_than, Normalizer
 from sktime.datasets import load_from_tsfile_to_dataframe
 import warnings
 from utils.augmentation import run_augmentation_single
@@ -1051,12 +1051,7 @@ class CMILoader(UEAloader):
         feature_cols.extend(["handedness", "sequence_counter"])
 
         self.args.enc_in = len(feature_cols)
-        n = math.log(self.args.enc_in, 2)
-        # self.args.d_model = np.maximum(64, int(math.pow(2, math.ceil(n))))
-        # self.args.d_model = 8 * int(math.pow(2, math.ceil(n + 2)))
-        self.args.d_model = 8 * int(math.pow(2, math.ceil(n)))
-        # self.args.d_ff = np.maximum(64, 4 * self.args.enc_in)
-        # self.args.d_ff = 4 * self.args.enc_in
+        self.args.d_model = 8 * smallest_pow_2_greater_than(self.args.enc_in)
         self.args.d_ff = 2 * self.args.d_model
 
         new_columns = ["sequence_id", "gesture_int"]
@@ -1084,8 +1079,6 @@ class CMILoader(UEAloader):
 
         all_df = pd.concat(Xf, axis=0)
         print(all_df.columns)
-
-        # all_df.set_index("index", drop=True, inplace=True)
 
         print(len(Xf), len(labels))
 
