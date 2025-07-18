@@ -129,10 +129,11 @@ class CMI_TimeFeatureEmbedding(nn.Module):
 
         print(type(self), "Max seq len: ", max_seq_len)
         # Assume the measurements are received at a given frequency.
-        self.time = torch.arange(max_seq_len, dtype=torch.float, requires_grad=False)
+        #self.time = torch.arange(max_seq_len, dtype=torch.float, requires_grad=False)
 
         # Normalize to [-0.5, 0.5]
-        self.time = self.time / max_seq_len - 0.5
+        #self.time = self.time / max_seq_len - 0.5
+        self.time = torch.linspace(-0.5, 0.5, max_seq_len)
 
     def forward(self, x):
         output = self.embed(torch.reshape(self.time, (-1, 1)))
@@ -146,7 +147,8 @@ class DataEmbedding(nn.Module):
         super(DataEmbedding, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(
+        #self.position_embedding = PositionalEmbedding(
+        self.position_embedding = FixedEmbedding(
             d_model=d_model, max_len=max_seq_len
         )
         self.temporal_embedding = (
