@@ -20,6 +20,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from typing import Union
 
+import logging
+
 warnings.filterwarnings("ignore")
 
 
@@ -154,6 +156,8 @@ class Exp_Classification(Exp_Basic):
         return total_loss, accuracy
 
     def train(self, setting):
+        logger = logging.getLogger(__name__)
+
         train_data, train_loader = self.train_data, self.train_loader
         # train_data0, train_loader0 = self.train_data, self.train_loader
         vali_data, vali_loader = self.vali_data, self.vali_loader
@@ -180,7 +184,7 @@ class Exp_Classification(Exp_Basic):
 
             for i, (batch_x, label, padding_mask) in enumerate(train_loader):
                 iter_count += 1
-                print("\r", iter_count, end="")
+                print(iter_count, end="\r")
 
                 model_optim.zero_grad()
 
@@ -195,7 +199,7 @@ class Exp_Classification(Exp_Basic):
                 train_loss.append(loss.item())
 
                 if (i + 1) % 100 == 0:
-                    print(
+                    logger.info(
                         "\titers: {0}, epoch: {1} | loss: {2:.7f}".format(
                             i + 1, epoch + 1, loss.item()
                         )
@@ -204,7 +208,7 @@ class Exp_Classification(Exp_Basic):
                     left_time = speed * (
                         (self.args.train_epochs - epoch) * train_steps - i
                     )
-                    print(
+                    logging.info(
                         "\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(
                             speed, left_time
                         )
