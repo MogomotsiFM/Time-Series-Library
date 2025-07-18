@@ -148,8 +148,10 @@ class DataEmbedding(nn.Module):
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
         #self.position_embedding = PositionalEmbedding(
+        #    d_model=d_model, max_len=max_seq_len
+        #)
         self.position_embedding = FixedEmbedding(
-            d_model=d_model, max_len=max_seq_len
+            c_in=c_in, d_model=d_model
         )
         self.temporal_embedding = (
             TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
