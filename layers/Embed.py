@@ -68,7 +68,7 @@ class FixedEmbedding(nn.Module):
         w[:, 0::2] = torch.sin(position * div_term)
         w[:, 1::2] = torch.cos(position * div_term)
 
-        self.emb = nn.Embedding(c_in, d_model).float()
+        self.emb = nn.Embedding(c_in, d_model)
         self.emb.weight = nn.Parameter(w, requires_grad=False)
 
     def forward(self, x):
@@ -147,11 +147,8 @@ class DataEmbedding(nn.Module):
         super(DataEmbedding, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        #self.position_embedding = PositionalEmbedding(
-        #    d_model=d_model, max_len=max_seq_len
-        #)
-        self.position_embedding = FixedEmbedding(
-            c_in=c_in, d_model=d_model
+        self.position_embedding = PositionalEmbedding(
+            d_model=d_model, max_len=max_seq_len
         )
         self.temporal_embedding = (
             TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
