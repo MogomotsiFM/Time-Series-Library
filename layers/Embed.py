@@ -68,7 +68,7 @@ class FixedEmbedding(nn.Module):
         w[:, 0::2] = torch.sin(position * div_term)
         w[:, 1::2] = torch.cos(position * div_term)
 
-        self.emb = nn.Embedding(c_in, d_model)
+        self.emb = nn.Embedding(c_in, d_model).float()
         self.emb.weight = nn.Parameter(w, requires_grad=False)
 
     def forward(self, x):
