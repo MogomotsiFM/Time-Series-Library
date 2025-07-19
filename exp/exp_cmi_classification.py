@@ -160,6 +160,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     min_seq_len_mask = torch.logical_or(
                         min_seq_len_mask, torch.tensor([start]) == 0
                     )
+                    print(start, end="\r")
 
                     if not torch.any(min_seq_len_mask):
                         break
@@ -249,14 +250,10 @@ class Exp_CMI_Classification(Exp_Classification):
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
             mask = torch.cat(masks, dim=-1)
-            #print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
             mask = mask[torch.arange(len(indices)), indices]
-            #print("Mask: ", mask.shape)
             
-            print("Shapes: ", pred0.shape, labels.shape)
             pred0 = pred0[mask]
             labels = labels[mask]
-            print("Shapes: ", pred0.shape, labels.shape)
             
             return pred0, labels
 
@@ -264,7 +261,6 @@ class Exp_CMI_Classification(Exp_Classification):
             most_common_class, indices = torch.mode(
                 class_indices, dim=-1, keepdim=True
             )  # batch, 1
-            # values = values * (class_indices == most_common_class).int()
             values = torch.masked_fill(
                 values,
                 torch.logical_not(class_indices == most_common_class),
@@ -276,14 +272,10 @@ class Exp_CMI_Classification(Exp_Classification):
             pred0 = w_preds[torch.arange(len(indices)), indices, :]
 
             mask = torch.cat(masks, dim=-1)
-            #print("\nMask: ", mask.shape, "Preds: ", w_preds.shape)
             mask = mask[torch.arange(len(indices)), indices]
-            #print("Mask: ", mask.shape)
             
-            print("Shapes: ", pred0.shape, labels.shape)
             pred0 = pred0[mask]
             labels = labels[mask]
-            print("Shapes: ", pred0.shape, labels.shape)
 
             return pred0, labels
 
@@ -302,14 +294,10 @@ class Exp_CMI_Classification(Exp_Classification):
             )
 
             mask = torch.cat(masks, dim=0)
-            #print("\nMasks: ", mask.shape, "Preds: ", pred0.shape, "Labels: ", labels.shape)
 
             mask = torch.squeeze(mask, dim=-1)
-            #print("Mask: ", mask.shape)
 
-            print("Shapes: ", pred0.shape, labels.shape)
             pred0 = pred0[mask]
             labels = labels[mask]
-            print("Shapes: ", pred0.shape, labels.shape)
 
             return pred0, labels
