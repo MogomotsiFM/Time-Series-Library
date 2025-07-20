@@ -135,9 +135,11 @@ class Exp_CMI_Classification(Exp_Classification):
         normalizer: Union[Normalizer, None] = None,
         label_encoder: Union[LabelEncoder, None] = None,
     ):
+        print("Data loader: ", type(self))
+
         shuffle_flag = False if (flag == "vali" or flag == "VALI") else True
         # batch_size = 1 if (flag == "vali" or flag == "VALI") else self.args.batch_size
-        batch_size = self.args.batch_size
+        batch_size = self.args.batch_size  if flag == "TRAIN" else 2*self.args.batch_size
 
         data_set = CMILoader(
             args=self.args,
@@ -201,7 +203,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     min_seq_len_mask = torch.logical_or(
                         min_seq_len_mask, torch.tensor([start]) == 0
                     )
-                    print(start, end="\r")
+                    print(f"\r         \r {start}", end="")
 
                     if not torch.any(min_seq_len_mask):
                         break
