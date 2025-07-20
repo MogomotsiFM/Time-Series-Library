@@ -39,6 +39,8 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @override
     def _build_model(self):
+        setting = Exp_CMI_Classification.format_settings(self.args)
+
         # normalizer = Normalizer()
         # label_encoder = LabelEncoder()
         # We use this to record the list of sequence ids that are used for training.
@@ -80,11 +82,50 @@ class Exp_CMI_Classification(Exp_Classification):
         model = self.model_dict[self.args.model].Model(self.args).float()
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
+        
+        try:
+            print("\nTry loading model parameters")
+            model.load_state_dict(
+                torch.load(os.path.join(self.args.checkpoints, setting, "checkpoint.pth"))
+            )
+            print("\nSuccessfully loaded pre-existing model parameters.")
+        except:
+            print("\nModel parameters not found.")
+            print("Training a model from scratch...")
+
         return model
 
     # @override
     # def _get_data(self, flag):
     #    return super()._get_data(flag)
+
+    @staticmethod
+    def format_settings(args):
+        settings = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
+            args.task_name,
+            args.model_id,
+            args.model,
+            args.data,
+            args.features,
+            args.seq_len,
+            args.label_len,
+            args.pred_len,
+            args.d_model,
+            args.n_heads,
+            args.e_layers,
+            args.d_layers,
+            args.d_ff,
+            args.expand,
+            args.d_conv,
+            args.factor,
+            args.embed,
+            args.distil,
+            args.des,
+            0,
+        )
+
+        return settings
+
 
     # @overload
     def _get_data(
