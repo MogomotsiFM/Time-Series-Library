@@ -230,7 +230,7 @@ class Exp_Classification(Exp_Basic):
                 # adjust_learning_rate(optimizer=model_optim, epoch=epoch, args=args)
                 adjust_learning_rate(model_optim, epoch, args)
 
-            print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+            print("\nEpoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
             # train_loss0, train_accuracy = self.vali(
             #     train_data0, train_loader0, criterion

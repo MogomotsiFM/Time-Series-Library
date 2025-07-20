@@ -249,7 +249,7 @@ class Exp_CMI_Classification(Exp_Classification):
         all_win_trues = all_win_trues.flatten().cpu().numpy()
         win_accuracy = cal_accuracy(predictions, all_win_trues)
 
-        print(len(preds), len(trues))
+        print("\n", len(preds), len(trues))
         print(preds[0].shape, trues[0].shape)
 
         preds = torch.cat(preds, 0)
