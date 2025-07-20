@@ -184,7 +184,7 @@ class Exp_Classification(Exp_Basic):
 
             for i, (batch_x, label, padding_mask) in enumerate(train_loader):
                 iter_count += 1
-                print(f"\r           \r {epoch} {iter_count}", end="")
+                print(f"\r           \r {epoch}  {i}  {iter_count}", end="")
 
                 model_optim.zero_grad()
 

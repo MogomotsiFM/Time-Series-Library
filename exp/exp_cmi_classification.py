@@ -203,7 +203,7 @@ class Exp_CMI_Classification(Exp_Classification):
                     min_seq_len_mask = torch.logical_or(
                         min_seq_len_mask, torch.tensor([start]) == 0
                     )
-                    print(f"\r         \r {start}", end="")
+                    print(f"\r         \r {i}  {start}", end="")
 
                     if not torch.any(min_seq_len_mask):
                         break
