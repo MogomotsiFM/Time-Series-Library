@@ -86,6 +86,7 @@ class Exp_CMI_Classification(Exp_Classification):
         try:
             print("\nTry loading model parameters")
             file_path = os.path.join(self.args.checkpoints, setting, "checkpoint.pth")
+            print(file_path)
             model.load_state_dict(
                 torch.load(file_path)
             )
