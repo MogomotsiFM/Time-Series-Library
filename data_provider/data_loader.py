@@ -1004,12 +1004,7 @@ class CMILoader(UEAloader):
         labels = torch.from_numpy(labels)
         return batch_x.to(self.args.device), labels.to(self.args.device)
 
-    @override
-    def load_all(self, root_path, file_list=None, flag=None):
-        """
-        The differences between this and the parent are that:
-        - The data lives in a single csv file,
-        """
+    def read_data(self, root_path, flag):
         print("Reading data")
         if flag in ["TRAIN", "VALI"]:
             df = pd.read_csv(f"{root_path}/train.csv")
@@ -1026,18 +1021,21 @@ class CMILoader(UEAloader):
             else:
                 df["gesture_int"] = self.label_encoder.transform(df["gesture"])
 
-            df = df[df["behavior"] == "Performs gesture"]
         else:
             df = pd.read_csv(f"{root_path}/test.csv")
+            
+            df["gesture_int"] = self.label_encoder.transform(df["gesture"])
 
-        df = df.dropna()
+        return df
+    
 
+    def relevant_features(self, columns:List[str]):
         # Feature list
         imu_cols = [
-            c for c in df.columns if (c.startswith("rot_") or c.startswith("acc_"))
+            c for c in columns if (c.startswith("rot_") or c.startswith("acc_"))
         ]
         tof_cols = [
-            c for c in df.columns if c.startswith("thm_") or c.startswith("tof_")
+            c for c in columns if c.startswith("thm_") or c.startswith("tof_")
         ]
 
         if self.args.use_imu_only:
@@ -1049,6 +1047,23 @@ class CMILoader(UEAloader):
             feature_cols = imu_cols + tof_cols
 
         feature_cols.extend(["handedness", "sequence_counter"])
+
+        return feature_cols
+
+
+    @override
+    def load_all(self, root_path, file_list=None, flag=None):
+        """
+        The differences between this and the parent are that:
+        - The data lives in a single csv file,
+        """
+        df = self.read_data(root_path, flag)
+
+        df = df[df["behavior"] == "Performs gesture"]
+        df = df.dropna()
+
+        # Feature list
+        feature_cols = self.relevant_features(df.columns)
 
         self.args.enc_in = len(feature_cols)
         self.args.d_model = 8 * smallest_pow_2_greater_than(self.args.enc_in)
@@ -1112,6 +1127,7 @@ class CMILoader(UEAloader):
 
         return all_df, labels_df
 
+
     def normalize_seq_len(
         self,
         # Contains data about the behaviour of interest and is grouped by sequence_id
@@ -1128,9 +1144,10 @@ class CMILoader(UEAloader):
         seq_gp = df.groupby("sequence_id")
         for seq_id, seq in seq_gp:
 
-            # This would be true if gathering validation data
-            # if hasattr(self.args, "test_seq_ids") and not (seq_id in self.args.test_seq_ids):
-            if flag == "TRAIN" or not (seq_id in self.args.test_seq_ids):
+            # Pre-conditions:
+            # test_seq_ids -> Empty when reading training and test data,
+            #              -> Contains seq ids when reading validation data.
+            if seq_id not in self.args.test_seq_ids:
                 labels.append(seq["gesture_int"].values[0])
                 seq_ids.append(seq_id)
 
@@ -1149,7 +1166,7 @@ class CMILoader(UEAloader):
             min_seq_len = np.min(lens)
 
             return max_seq_len, min_seq_len, X_list, labels
-        else:  # flag == "TRAIN"
+        elif flag == "TRAIN":
             # Split the data into training and validation sets.
             ids = list(range(len(X_list)))
 
@@ -1165,12 +1182,14 @@ class CMILoader(UEAloader):
             print("Split: ", len(ids), len(ids_tr))
 
             self.args.test_seq_ids = {seq_ids[id] for id in ids_tr}
+        else: # flag == "TEST":
+            pass
 
         print("Max seq leng percentile: ", self.args.pad_percentile)
         max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
         min_seq_len = np.min(lens)
 
-        min_len = int(0.25 * max_seq_len)
+        min_len = int(0.5 * max_seq_len)
 
         new_labels: List[int] = []
         Xf = []
@@ -1193,19 +1212,22 @@ class CMILoader(UEAloader):
                 # Actually, this approach slows down learning and inference :-(
                 z = seq
                 #for j in range(length, math.ceil(0.5 * max_seq_len), -2):
-                for _ in range(max_seq_len, length):
-                    z = z.copy()
+                for end in range(max_seq_len, length):
+                    start = end - max_seq_len
+                    for width in range(min_len, max_seq_len):
+                        z = seq.iloc[start:(start+width)]
+                        z = z.copy(deep=True)
 
-                    z = z[1:]
-                    idx = np.ones((z.shape[0],)) * index
-                    z.set_index(pd.Index(idx), inplace=True)
-                    Xf.append(z)
+                        #z = z[1:]
+                        idx = np.ones((z.shape[0],)) * index
+                        z.set_index(pd.Index(idx), inplace=True)
+                        Xf.append(z)
 
-                    new_labels.append(label)
+                        new_labels.append(label)
 
-                    index = index + 1
+                        index = index + 1
 
-                    if index % 5000 == 0:
-                        print(index)
+                        if index % 50000 == 0:
+                            print(index)
 
         return max_seq_len, min_seq_len, Xf, new_labels
