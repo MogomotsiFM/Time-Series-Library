@@ -88,10 +88,11 @@ class Exp_CMI_Classification(Exp_Classification):
             file_path = os.path.join(self.args.checkpoints, setting, "checkpoint.pth")
             print(file_path)
             model.load_state_dict(
-                torch.load(file_path)
+                torch.load(file_path, map_location=self.args.device)
             )
             print("\nSuccessfully loaded pre-existing model parameters.")
-        except:
+        except Exception as exp:
+            print(exp)
             print("\nModel parameters not found.")
             print("Training a model from scratch...")
 
