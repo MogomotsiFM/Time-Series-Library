@@ -22,6 +22,8 @@ from utils.augmentation import run_augmentation_single
 from typing_extensions import override
 from typing import Literal, List, Union
 
+from itertools import chain
+
 warnings.filterwarnings("ignore")
 
 
@@ -1130,6 +1132,35 @@ class CMILoader(UEAloader):
         return all_df, labels_df
 
 
+    def expanding_window_scan(self, index: int, zdf: pd.DataFrame, label: int, min_win_sz: int, max_win_sz: int):
+        """"
+            Generate additional data by scanning the given dataframe using an expanding window.
+
+            zdf: The dataframe on which to scan the expanding window,
+            min_len: The minimum size of the window. It is some percentate of the max_seq_len.
+            max_len: The maximum size of the window. It is min(len(zdf), max_seq_len)
+        """
+        Xf = []
+        labels = []
+
+        for end in chain([len(zdf)], range(min_win_sz, max_win_sz)):
+            z = zdf.iloc[:end]
+            z = z.copy(deep=True)
+
+            idx = np.ones((z.shape[0],)) * index
+            z.set_index(pd.Index(idx), inplace=True)
+            Xf.append(z)
+
+            labels.append(label)
+
+            index = index + 1
+
+            if index % 50000 == 0:
+                print(index)
+
+        return Xf, labels, index
+
+
     def normalize_seq_len(
         self,
         # Contains data about the behaviour of interest and is grouped by sequence_id
@@ -1200,35 +1231,45 @@ class CMILoader(UEAloader):
         for seq, label, length in zip(X_list, labels, lens):
 
             if True or length >= min_len:
-                idx = np.ones((seq.shape[0],)) * index
-                seq.set_index(pd.Index(idx), inplace=True)
-                Xf.append(seq)
-
-                new_labels.append(label)
-
-                index = index + 1
-
                 # We only need part of the sequence to determine if it is interesting
                 # Use this observation to generate new data
                 # This simulates a decoder only transformer that can ingest one token at a time.
                 # Actually, this approach slows down learning and inference :-(
                 z = seq
-                for end in range(max_seq_len, length):
-                    start = end - max_seq_len
-                    for width in range(min_len, max_seq_len):
-                        z = seq.iloc[start:(start+width)]
-                        z = z.copy(deep=True)
+                output: List[torch.Tensor] = []
+                if length > max_seq_len:
+                    num_features = len(z.columns)
+                    # unfold only works with 4D tensors
+                    # Therefore the 2D tensor is unsqueezed twice to add two more dimensions.
+                    zt = torch.tensor(z.values).unsqueeze(0).unsqueeze(0)
+                    out_tensor = F.unfold(zt, kernel_size=(max_seq_len, num_features), stride=(1, 1))
 
-                        #z = z[1:]
-                        idx = np.ones((z.shape[0],)) * index
-                        z.set_index(pd.Index(idx), inplace=True)
-                        Xf.append(z)
+                    output = [out.reshape(-1, num_features) for out in out_tensor.squeeze().transpose(1, 0)]
+                else:
+                    output = [torch.tensor(z.values)]
 
-                        new_labels.append(label)
+                for zt in output:
+                    zdf = pd.DataFrame(zt.numpy(), columns=seq.columns)
+                    length = min(len(zt), max_seq_len)
 
-                        index = index + 1
+                    Xf_, labels_, index = self.expanding_window_scan(index, zdf, label, min_len, length) 
 
-                        if index % 50000 == 0:
-                            print(index)
+                    Xf.extend(Xf_)
+                    new_labels.extend(labels_)
+
+                    # for end in chain([len(zdf)], range(min_len, length)):
+                    #     z = zdf.iloc[:end]
+                    #     z = z.copy(deep=True)
+
+                    #     idx = np.ones((z.shape[0],)) * index
+                    #     z.set_index(pd.Index(idx), inplace=True)
+                    #     Xf.append(z)
+
+                    #     new_labels.append(label)
+
+                    #     index = index + 1
+
+                    #     if index % 50000 == 0:
+                    #         print(index)
 
         return max_seq_len, min_seq_len, Xf, new_labels
