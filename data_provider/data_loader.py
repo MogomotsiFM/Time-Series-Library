@@ -6,6 +6,8 @@ import re
 import numpy as np
 import pandas as pd
 import torch
+from torch import nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -1161,12 +1163,12 @@ class CMILoader(UEAloader):
                 X_list.append(seq)
                 lens.append(len(seq))
 
-        if flag == "VALI":  # Validation dataset
+        if flag in ["VALI", "TEST"]:  # Validation dataset
             max_seq_len = np.max(lens)
             min_seq_len = np.min(lens)
 
             return max_seq_len, min_seq_len, X_list, labels
-        elif flag == "TRAIN":
+        else: # flag == "TRAIN":
             # Split the data into training and validation sets.
             ids = list(range(len(X_list)))
 
@@ -1178,16 +1180,16 @@ class CMILoader(UEAloader):
             X_list = [X_list[id] for id in ids_tr]
             labels = y_tr
 
+            max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
+            min_seq_len = np.min(lens)
+            print("Max seq length percentile: ", self.args.pad_percentile, max_seq_len)
+            lens = [lens[id] for id in ids_tr]
+            print("Max seq length percentile: ", self.args.pad_percentile, int(np.percentile(lens, self.args.pad_percentile)))
+
             print("Len features vs labels: ", len(X_list), len(labels))
             print("Split: ", len(ids), len(ids_tr))
 
             self.args.test_seq_ids = {seq_ids[id] for id in ids_tr}
-        else: # flag == "TEST":
-            pass
-
-        print("Max seq leng percentile: ", self.args.pad_percentile)
-        max_seq_len = int(np.percentile(lens, self.args.pad_percentile))
-        min_seq_len = np.min(lens)
 
         min_len = int(0.5 * max_seq_len)
 
@@ -1211,7 +1213,6 @@ class CMILoader(UEAloader):
                 # This simulates a decoder only transformer that can ingest one token at a time.
                 # Actually, this approach slows down learning and inference :-(
                 z = seq
-                #for j in range(length, math.ceil(0.5 * max_seq_len), -2):
                 for end in range(max_seq_len, length):
                     start = end - max_seq_len
                     for width in range(min_len, max_seq_len):
