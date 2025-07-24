@@ -129,15 +129,12 @@ class CMI_TimeFeatureEmbedding(nn.Module):
 
         print(type(self), "Max seq len: ", max_seq_len)
         # Assume the measurements are received at a given frequency.
-        #self.time = torch.arange(max_seq_len, dtype=torch.float, requires_grad=False)
+        self.time = torch.linspace(-0.5, 0.5, max_seq_len).reshape((-1, 1))     # Dim: max_seq_len, 1 
 
-        # Normalize to [-0.5, 0.5]
-        #self.time = self.time / max_seq_len - 0.5
-        self.time = torch.linspace(-0.5, 0.5, max_seq_len)
-
-    def forward(self, x):
-        output = self.embed(torch.reshape(self.time, (-1, 1)))
-        return torch.unsqueeze(output, dim=0)
+    def forward(self, _):
+        # output = self.embed(torch.reshape(self.time, (-1, 1)))
+        output = self.embed(self.time)  # Dim: max_seq_len, d_model
+        return torch.unsqueeze(output, dim=0)   # Dim: 1, max_seq_len, d_model
 
 
 class DataEmbedding(nn.Module):
@@ -166,6 +163,36 @@ class DataEmbedding(nn.Module):
                 + self.temporal_embedding(x_mark)
                 + self.position_embedding(x)
             )
+        return self.dropout(x)
+
+
+class Diff_DataEmbedding(nn.Module):
+    def __init__(
+        self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1, max_seq_len=5000
+    ):
+        super(Diff_DataEmbedding, self).__init__()
+
+        self.acc_embedding = TokenEmbedding(3, d_model=d_model) # acc_x, acc_y, acc_z
+        self.rot_embedding = TokenEmbedding(4, d_model=d_model) # rot_x, rot_y, rot_z, rot_w
+        self.handedness_embedding = nn.Embedding(2, d_model) # Left(0) or right(1)
+        self.position_embedding = PositionalEmbedding(
+            d_model=d_model, max_len=max_seq_len
+        )
+        self.temporal_embedding = (
+            TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
+            if embed_type != "timeF"
+            else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
+        )
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, x_mark):
+        assert x.shape[1] == 8, "We only use acceleration, orientation, and handedness"
+        x = (
+            self.acc_embedding(x[:, :3])
+            + self.rot_embedding(x[:, 3:7])
+            + self.handedness_embedding(x[:, 7])
+            + self.position_embedding(x)
+        )
         return self.dropout(x)
 
 
