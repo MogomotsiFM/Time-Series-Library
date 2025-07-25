@@ -1020,6 +1020,12 @@ class CMILoader(UEAloader):
                 not self.label_encoder is None
             ), "LabelEncoder should be specified for training and validation."
 
+            mask = df["sequence_type"] == "Non-Target"
+            df.loc[mask, "gesture"] = "Non-Target"
+            if self.args.is_binary:
+                mask = df["sequence_type"] == "Target"
+                df.loc[mask, "gesture"] == "Target"
+
             if flag == "TRAIN":
                 df["gesture_int"] = self.label_encoder.fit_transform(df["gesture"])
             else:

@@ -58,7 +58,7 @@ def wrapper(args):
     else:
         Exp = Exp_Long_Term_Forecast
 
-    normalizer = Normalizer()
+    normalizer = Normalizer(norm_type="minmax")
     label_encoder = LabelEncoder()
 
     if args["is_training"]:
@@ -66,28 +66,7 @@ def wrapper(args):
             # setting record of experiments
             # args = SimpleNamespace(**args)
             exp = Exp(SimpleNamespace(**args), normalizer, label_encoder)
-            setting = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
-                args["task_name"],
-                args["model_id"],
-                args["model"],
-                args["data"],
-                args["features"],
-                args["seq_len"],
-                args["label_len"],
-                args["pred_len"],
-                args["d_model"],
-                args["n_heads"],
-                args["e_layers"],
-                args["d_layers"],
-                args["d_ff"],
-                args["expand"],
-                args["d_conv"],
-                args["factor"],
-                args["embed"],
-                args["distil"],
-                args["des"],
-                ii,
-            )
+            setting = Exp_CMI_Classification.format_settings(args, ii)
 
             print(
                 ">>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>".format(setting)
@@ -105,28 +84,7 @@ def wrapper(args):
     else:
         exp = Exp(args)  # set experiments
         ii = 0
-        setting = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
-            args["task_name"],
-            args["model_id"],
-            args["model"],
-            args["data"],
-            args["features"],
-            args["seq_len"],
-            args["label_len"],
-            args["pred_len"],
-            args["d_model"],
-            args["n_heads"],
-            args["e_layers"],
-            args["d_layers"],
-            args["d_ff"],
-            args["expand"],
-            args["d_conv"],
-            args["factor"],
-            args["embed"],
-            args["distil"],
-            args["des"],
-            ii,
-        )
+        setting = Exp_CMI_Classification.format_settings(args, ii)
 
         print(">>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<".format(setting))
         exp.test(setting, test=1)
@@ -140,10 +98,12 @@ def intro():
     config = dict()
 
     # Original code parameters
+    # Whether to build a Target vs Non-Target classifier. Or Non-Target vs all the other target classes.
+    config["is_binary"] = is_binary # Options: True, False.
     config["optimizer"] = optimizer
     config["strategy"] = strategy
-    config["use_imu_only"] = True
-    config["use_acceleration_only"] = True
+    config["use_imu_only"] = use_imu_only
+    config["use_acceleration_only"] = use_acceleration_only
     config["pad_percentile"] = pad_percentile
     config["drop_last"] = True
     config["top_k"] = 4  # TimesNet parameter
@@ -384,20 +344,26 @@ def intro():
 
 if __name__ == "__main__":
     # model name, options: [Autoformer, Transformer, TimesNet, TimeMixer, Mamba, TemporalFusionTransformer]
-    model_name = "TimeMixer"
+    model_name = "Transformer"
     num_classes = 18
-    seq_len = 35
+    seq_len = 26
     pad_percentile = 0.95
     d_model = 3
-    N: int = 8
+    N: int = 4
     h: int = 1
     dropout: float = 0.1
     d_ff: int = 256
     device = None
     train_epochs = 500
-    batch_size = 32
+    batch_size = 16
     fix_seed = 1983
     strategy = "max"  # max, mode, all, sum
     optimizer = "adam"  # adam, sgd
+
+    use_imu_only = True
+    use_acceleration_only = False
+
+    # Whether to build a Target vs Non-Target classifier. Or Non-Target vs all the other target classes.
+    is_binary = False # Options: True, False.
 
     intro()
