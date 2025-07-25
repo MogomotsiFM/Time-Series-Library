@@ -178,19 +178,17 @@ class Diff_DataEmbedding(nn.Module):
         self.position_embedding = PositionalEmbedding(
             d_model=d_model, max_len=max_seq_len
         )
-        self.temporal_embedding = (
-            TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-            if embed_type != "timeF"
-            else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-        )
+
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, x_mark):
-        assert x.shape[1] == 8, "We only use acceleration, orientation, and handedness"
+        # batch, seq, 8
+        assert x.shape[-1] == 8, "We only use acceleration, orientation, and handedness"
+        handedness = x[:, :, 7]
         x = (
-            self.acc_embedding(x[:, :3])
-            + self.rot_embedding(x[:, 3:7])
-            + self.handedness_embedding(x[:, 7])
+            self.acc_embedding(x[:, :, :3])
+            + self.rot_embedding(x[:, :, 3:7])
+            + self.handedness_embedding(handedness.long())
             + self.position_embedding(x)
         )
         return self.dropout(x)
