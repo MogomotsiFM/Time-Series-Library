@@ -105,7 +105,7 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @staticmethod
     def format_settings(args: SimpleNamespace, exp_idx=0):
-        settings = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
+        settings = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_enc_in{}_dm{}_nh{}_el{}_dl{}_df{}_cout{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
             args.task_name,
             args.model_id,
             args.model,
@@ -114,11 +114,13 @@ class Exp_CMI_Classification(Exp_Classification):
             args.seq_len,
             args.label_len,
             args.pred_len,
+            args.enc_in,
             args.d_model,
             args.n_heads,
             args.e_layers,
             args.d_layers,
             args.d_ff,
+            args.c_out,
             args.expand,
             args.d_conv,
             args.factor,
