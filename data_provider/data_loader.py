@@ -1256,7 +1256,7 @@ class CMILoader(UEAloader):
                     output = [torch.tensor(z.values)]
 
                 for zt in output:
-                    zdf = pd.DataFrame(zt, columns=seq.columns)
+                    zdf = pd.DataFrame(zt.cpu().numpy(), columns=seq.columns)
                     length = min(len(zt), max_seq_len)
 
                     Xf_, labels_, index = self.expanding_window_scan(index, zdf, label, min_len, length) 
