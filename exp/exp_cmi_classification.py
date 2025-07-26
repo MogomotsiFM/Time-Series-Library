@@ -63,6 +63,7 @@ class Exp_CMI_Classification(Exp_Classification):
 
         self.args.pred_len = 0
         self.args.enc_in = self.train_data.feature_df.shape[1]
+        self.args.c_out = len(self.train_data.class_names)
         self.args.num_class = len(self.train_data.class_names)
 
         projection_dim = smallest_pow_2_greater_than(self.args.d_model * self.args.max_seq_len)
@@ -103,7 +104,7 @@ class Exp_CMI_Classification(Exp_Classification):
     #    return super()._get_data(flag)
 
     @staticmethod
-    def format_settings(args):
+    def format_settings(args: SimpleNamespace, exp_idx=0):
         settings = "{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}".format(
             args.task_name,
             args.model_id,
@@ -124,7 +125,7 @@ class Exp_CMI_Classification(Exp_Classification):
             args.embed,
             args.distil,
             args.des,
-            0,
+            exp_idx,
         )
 
         return settings
