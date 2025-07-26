@@ -1098,6 +1098,7 @@ class CMILoader(UEAloader):
             df, feature_cols, flag
         )
 
+        #self.args.c_out = len(df["gesture_int"].unique())
         self.max_seq_len = max_seq_len
         print("Max seq lenght: ", self.max_seq_len)
         print("Min seq length: ", min_seq_len)
@@ -1133,7 +1134,7 @@ class CMILoader(UEAloader):
         # Replace NaN values
         grp = all_df.groupby(by=all_df.index)
         print("Groups: ", len(grp))
-        all_df = grp.transform(interpolate_missing)
+        #all_df = grp.transform(interpolate_missing)
 
         return all_df, labels_df
 
@@ -1255,7 +1256,7 @@ class CMILoader(UEAloader):
                     output = [torch.tensor(z.values)]
 
                 for zt in output:
-                    zdf = pd.DataFrame(zt.numpy(), columns=seq.columns)
+                    zdf = pd.DataFrame(zt, columns=seq.columns)
                     length = min(len(zt), max_seq_len)
 
                     Xf_, labels_, index = self.expanding_window_scan(index, zdf, label, min_len, length) 
