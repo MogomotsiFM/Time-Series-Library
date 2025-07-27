@@ -64,9 +64,9 @@ def wrapper(args):
     if args["is_training"]:
         for ii in range(args["itr"]):
             # setting record of experiments
-            # args = SimpleNamespace(**args)
-            exp = Exp(SimpleNamespace(**args), normalizer, label_encoder)
-            setting = Exp_CMI_Classification.format_settings(args, ii)
+            config = SimpleNamespace(**args)
+            exp = Exp(config, normalizer, label_encoder)
+            setting = Exp_CMI_Classification.format_settings(config, ii)
 
             print(
                 ">>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>".format(setting)
@@ -82,9 +82,10 @@ def wrapper(args):
             elif args["gpu_type"] == "cuda":
                 torch.cuda.empty_cache()
     else:
-        exp = Exp(args)  # set experiments
+        config = SimpleNamespace(**args)
+        exp = Exp(config)  # set experiments
         ii = 0
-        setting = Exp_CMI_Classification.format_settings(args, ii)
+        setting = Exp_CMI_Classification.format_settings(config, ii)
 
         print(">>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<".format(setting))
         exp.test(setting, test=1)
@@ -107,6 +108,7 @@ def intro():
     config["pad_percentile"] = pad_percentile
     config["drop_last"] = True
     config["top_k"] = 4  # TimesNet parameter
+    config["multiplier"] = multiplier
 
     random.seed(fix_seed)
     torch.manual_seed(fix_seed)
@@ -173,7 +175,7 @@ def intro():
     # parser.add_argument('--d_conv', type=int, default=4, help='conv kernel size for Mamba')
     # parser.add_argument('--top_k', type=int, default=5, help='for TimesBlock')
     # parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
-    config["enc_in"] = d_model
+    config["enc_in"] = enc_in
     # parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')
 
     # parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
@@ -181,7 +183,7 @@ def intro():
     config["c_out"] = num_classes
     # parser.add_argument('--c_out', type=int, default=7, help='output size')
 
-    config["d_model"] = 30 * d_model
+    config["d_model"] = multiplier * enc_in
     # parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
 
     config["n_heads"] = h
@@ -344,15 +346,18 @@ def intro():
 
 if __name__ == "__main__":
     # model name, options: [Autoformer, Transformer, TimesNet, TimeMixer, Mamba, TemporalFusionTransformer]
-    model_name = "Transformer"
-    num_classes = 18
+    model_name = "TimesNet"
+    num_classes = 2
     seq_len = 26
     pad_percentile = 0.95
-    d_model = 3
+    enc_in = 8
     N: int = 4
     h: int = 1
     dropout: float = 0.1
     d_ff: int = 256
+    # Find the smallest power of 2 that is greater than the number of features
+    # Multiply this number with this multiplier to get the d_model
+    multiplier = 8
     device = None
     train_epochs = 500
     batch_size = 16
