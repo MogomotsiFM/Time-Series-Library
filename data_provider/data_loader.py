@@ -1076,7 +1076,7 @@ class CMILoader(UEAloader):
         feature_cols = self.relevant_features(df.columns)
 
         self.args.enc_in = len(feature_cols)
-        self.args.d_model = 8 * smallest_pow_2_greater_than(self.args.enc_in)
+        self.args.d_model = 16 * smallest_pow_2_greater_than(self.args.enc_in)
         self.args.d_ff = 2 * self.args.d_model
 
         new_columns = ["sequence_id", "gesture_int"]
