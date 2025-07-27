@@ -64,7 +64,7 @@ class CMI_TokenEmbedding(nn.Module):
         self.handedness_embedding = nn.Embedding(2, d_model) # Left(0) or right(1)
         #self.handedness_embedding = nn.Linear(1, d_model, bias=False)
 
-    def forward(self, x, x_mark):
+    def forward(self, x):
         # batch, seq, 8
         handedness = x[:, :, 7]
         x = (
