@@ -53,6 +53,28 @@ class TokenEmbedding(nn.Module):
         return x
 
 
+class CMI_TokenEmbedding(nn.Module):
+    def __init__(self, c_in, d_model):
+        super(CMI_TokenEmbedding, self).__init__()
+
+        assert c_in == 8, "We only use acceleration, orientation, and handedness"
+
+        self.acc_embedding = TokenEmbedding(3, d_model=d_model) # acc_x, acc_y, acc_z
+        self.rot_embedding = TokenEmbedding(4, d_model=d_model) # rot_x, rot_y, rot_z, rot_w
+        self.handedness_embedding = nn.Embedding(2, d_model) # Left(0) or right(1)
+        #self.handedness_embedding = nn.Linear(1, d_model, bias=False)
+
+    def forward(self, x, x_mark):
+        # batch, seq, 8
+        handedness = x[:, :, 7]
+        x = (
+            self.acc_embedding(x[:, :, :3])
+            + self.rot_embedding(x[:, :, 3:7])
+            + self.handedness_embedding(handedness.long())
+        )
+        return x
+
+
 class FixedEmbedding(nn.Module):
     def __init__(self, c_in, d_model):
         super(FixedEmbedding, self).__init__()
@@ -172,9 +194,8 @@ class Diff_DataEmbedding(nn.Module):
     ):
         super(Diff_DataEmbedding, self).__init__()
 
-        self.acc_embedding = TokenEmbedding(3, d_model=d_model) # acc_x, acc_y, acc_z
-        self.rot_embedding = TokenEmbedding(4, d_model=d_model) # rot_x, rot_y, rot_z, rot_w
-        self.handedness_embedding = nn.Embedding(2, d_model) # Left(0) or right(1)
+        # self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
+        self.value_embedding = CMI_TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(
             d_model=d_model, max_len=max_seq_len
         )
@@ -182,15 +203,7 @@ class Diff_DataEmbedding(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, x_mark):
-        # batch, seq, 8
-        assert x.shape[-1] == 8, "We only use acceleration, orientation, and handedness"
-        handedness = x[:, :, 7]
-        x = (
-            self.acc_embedding(x[:, :, :3])
-            + self.rot_embedding(x[:, :, 3:7])
-            + self.handedness_embedding(handedness.long())
-            + self.position_embedding(x)
-        )
+        x = self.value_embedding(x) + self.position_embedding(x)
         return self.dropout(x)
 
 
@@ -200,7 +213,8 @@ class CMI_DataEmbedding(nn.Module):
     ):
         super(CMI_DataEmbedding, self).__init__()
 
-        self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
+        # self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
+        self.value_embedding = CMI_TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(
             d_model=d_model, max_len=max_seq_len
         )
