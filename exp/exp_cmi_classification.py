@@ -39,8 +39,6 @@ class Exp_CMI_Classification(Exp_Classification):
 
     @override
     def _build_model(self):
-        setting = Exp_CMI_Classification.format_settings(self.args)
-
         # normalizer = Normalizer()
         # label_encoder = LabelEncoder()
         # We use this to record the list of sequence ids that are used for training.
@@ -85,6 +83,8 @@ class Exp_CMI_Classification(Exp_Classification):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         
         try:
+            setting = Exp_CMI_Classification.format_settings(self.args)
+
             print("\nTry loading model parameters")
             file_path = os.path.join(self.args.checkpoints, setting, "checkpoint.pth")
             print(file_path)
