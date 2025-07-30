@@ -232,21 +232,21 @@ class Exp_Classification(Exp_Basic):
 
             print("\nEpoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            # train_loss0, train_accuracy = self.vali(
-            #     train_data0, train_loader0, criterion
-            # )
+            train_loss0, train_accuracy = self.vali(
+                train_data, train_loader, criterion
+            )
             vali_loss, val_accuracy = self.vali(vali_data, vali_loader, criterion)
             # test_loss, test_accuracy = self.vali(test_data, test_loader, criterion)
 
             print(
                 # "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f} Test Loss: {5:.3f} Test Acc: {6:.3f}".format(
-                # "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} ({3:.3f}) Train Acc: {4:.3f} Vali Loss: {5:.3f} Vali Acc: {6:.3f}".format(
-                "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f}".format(
+                "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} ({3:.3f}) Train Acc: {4:.3f} Vali Loss: {5:.3f} Vali Acc: {6:.3f}".format(
+                #"Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f}".format(
                     epoch + 1,
                     train_steps,
                     train_loss,
-                    # train_loss0,
-                    # train_accuracy,
+                    train_loss0,
+                    train_accuracy,
                     vali_loss,
                     val_accuracy,
                 )

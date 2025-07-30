@@ -188,7 +188,7 @@ class Exp_CMI_Classification(Exp_Classification):
             for i, (batch_x, label0, padding_mask) in enumerate(vali_loader):
                 windowed_preds = []
                 masks = []
-                for end in range(self.args.max_seq_len, vali_data.max_seq_len):
+                for end in range(self.args.max_seq_len, vali_data.max_seq_len+1):
                     start = end - self.args.max_seq_len
 
                     batch_x = batch_x.float().to(self.device)
