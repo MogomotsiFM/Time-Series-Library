@@ -12,6 +12,8 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 
+from scipy.spatial.transform import Rotation as R
+
 from utils.timefeatures import time_features
 from data_provider.m4 import M4Dataset, M4Meta
 from data_provider.uea import subsample, interpolate_missing, smallest_pow_2_greater_than, Normalizer
@@ -1147,6 +1149,9 @@ class CMILoader(UEAloader):
             min_len: The minimum size of the window. It is some percentate of the max_seq_len.
             max_len: The maximum size of the window. It is min(len(zdf), max_seq_len)
         """
+        if index > 10000:
+            return [], [], index
+
         Xf = []
         labels = []
 
@@ -1188,18 +1193,26 @@ class CMILoader(UEAloader):
             # test_seq_ids -> Empty when reading training and test data,
             #              -> Contains seq ids when reading validation data.
             if seq_id not in self.args.test_seq_ids:
-                labels.append(seq["gesture_int"].values[0])
-                seq_ids.append(seq_id)
+                if flag == "TRAIN":
+                    xs, ls, index = self.sample(seq[feature_cols], seq["gesture_int"].values[0], index)
 
-                seq = seq[feature_cols]
-                seq = seq.copy()
-                idx = np.ones((seq.shape[0],)) * index
-                seq.set_index(pd.Index(idx), inplace=True)
+                    X_list.extend(xs)
+                    labels.extend(ls)
+                    lens.extend([len(seq) for _ in ls])
+                    seq_ids.extend([seq_id for _ in ls])
+                else:
+                    labels.append(seq["gesture_int"].values[0])
+                    seq_ids.append(seq_id)
 
-                index = index + 1
+                    seq = seq[feature_cols]
+                    seq = seq.copy()
+                    idx = np.ones((seq.shape[0],)) * index
+                    seq.set_index(pd.Index(idx), inplace=True)
 
-                X_list.append(seq)
-                lens.append(len(seq))
+                    index = index + 1
+
+                    X_list.append(seq)
+                    lens.append(len(seq))
 
         if flag in ["VALI", "TEST"]:  # Validation dataset
             max_seq_len = np.max(lens)
@@ -1248,7 +1261,7 @@ class CMILoader(UEAloader):
                     num_features = len(z.columns)
                     # unfold only works with 4D tensors
                     # Therefore the 2D tensor is unsqueezed twice to add two more dimensions.
-                    zt = torch.tensor(z.values).unsqueeze(0).unsqueeze(0)
+                    zt = torch.tensor(z.to_numpy(copy=False)).unsqueeze(0).unsqueeze(0)
                     out_tensor = F.unfold(zt, kernel_size=(max_seq_len, num_features), stride=(1, 1))
 
                     output = [out.reshape(-1, num_features) for out in out_tensor.squeeze().transpose(1, 0)]
@@ -1264,19 +1277,58 @@ class CMILoader(UEAloader):
                     Xf.extend(Xf_)
                     new_labels.extend(labels_)
 
-                    # for end in chain([len(zdf)], range(min_len, length)):
-                    #     z = zdf.iloc[:end]
-                    #     z = z.copy(deep=True)
-
-                    #     idx = np.ones((z.shape[0],)) * index
-                    #     z.set_index(pd.Index(idx), inplace=True)
-                    #     Xf.append(z)
-
-                    #     new_labels.append(label)
-
-                    #     index = index + 1
-
-                    #     if index % 50000 == 0:
-                    #         print(index)
-
         return max_seq_len, min_seq_len, Xf, new_labels
+
+    
+    def sample(self, seq: pd.DataFrame, label:int, index:int, N:int=3):
+        """
+            N: Number of measurement samples
+        """
+        min_acc = -0.30
+        max_acc =  0.30
+
+        min_rot = -3.50 # Degrees
+        max_rot =  3.50 # Degrees
+
+        ida = np.argmax(np.array(["acc" in header for header in seq.columns]))
+        idb = ida + 3
+        assert np.all(["acc" in header for header in seq.columns[ida:idb]]) == True, "The following operation should be applied to acceleration data."
+
+        idr = np.argmax(np.array(["rot" in header for header in seq.columns]))
+        ids = idr + 4
+        assert np.all(["rot" in header for header in seq.columns[idr:ids]]) == True, "The following operation should be applied to acceleration data."
+
+        
+        Xf: List[pd.DataFrame] = []
+        labels: List[int] = []
+        for _ in range(N):
+            # Sample from acceleration distribution: A uniform distribution between -0.30 to 0.30
+            acc_noise = np.random.uniform(low=min_acc, high=max_acc, size=(len(seq), 3))
+
+            # Sample Euler angles then convert them to quaternions.
+            rot_noise = np.random.uniform(low=min_rot, high=max_rot, size=(len(seq), 3))
+            rot_noise = R.from_euler("xyz", rot_noise, degrees=True)
+            #rot_noise = rot_noise.as_quat(scalar_first=True) # w comes first: w, x, y, z
+
+            tseq = seq.copy(deep=True)
+            ms = tseq.to_numpy(copy=False)
+
+            acc  = ms[:, ida:idb] + acc_noise
+            rot = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix()
+            rot = np.flip(R.from_matrix(rot).as_quat())
+
+            ms[:, ida:idb] = acc
+            ms[:, idr:ids] = rot
+
+            idx = np.ones((tseq.shape[0],)) * index
+            tseq.set_index(pd.Index(idx), inplace=True)
+
+            Xf.append(tseq)
+            labels.append(label)
+
+            index = index + 1
+
+        return Xf, labels, index
+            
+
+
