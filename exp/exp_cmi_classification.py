@@ -22,6 +22,8 @@ import warnings
 import numpy as np
 import pdb
 
+import matplotlib.pyplot as plt
+
 from typing import List, Literal
 from typing_extensions import override, overload
 
@@ -350,3 +352,24 @@ class Exp_CMI_Classification(Exp_Classification):
             labels = labels[mask]
 
             return pred0, labels
+
+
+    def plots(self):
+        print("plt")
+        
+        for i, (batch_x, label0, padding_mask) in enumerate(self.vali_loader):
+            fig, ax = plt.subplots()
+
+            seq = batch_x[0, :, :]
+                
+            t = np.arange(len(seq))
+
+            x = seq[:, 0]
+            y = seq[:, 1]
+            z = seq[:, 2]
+
+            ax.plot(t, x, label="x")
+            ax.plot(t, y, label="y")
+            ax.plot(t, z, label="z")
+            
+            plt.show()
