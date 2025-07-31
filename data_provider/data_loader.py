@@ -1149,9 +1149,6 @@ class CMILoader(UEAloader):
             min_len: The minimum size of the window. It is some percentate of the max_seq_len.
             max_len: The maximum size of the window. It is min(len(zdf), max_seq_len)
         """
-        if index > 10000:
-            return [], [], index
-
         Xf = []
         labels = []
 
