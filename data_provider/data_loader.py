@@ -1149,6 +1149,8 @@ class CMILoader(UEAloader):
             min_len: The minimum size of the window. It is some percentate of the max_seq_len.
             max_len: The maximum size of the window. It is min(len(zdf), max_seq_len)
         """
+        if index > 100000:
+            return [], [], index
         Xf = []
         labels = []
 
@@ -1156,13 +1158,18 @@ class CMILoader(UEAloader):
             z = zdf.iloc[:end]
             z = z.copy(deep=True)
 
-            idx = np.ones((z.shape[0],)) * index
-            z.set_index(pd.Index(idx), inplace=True)
-            Xf.append(z)
+            xs, ls, index = self.sample(z, label, index)
+            
+            Xf.extend(xs)
+            labels.extend(ls)
 
-            labels.append(label)
+            # idx = np.ones((z.shape[0],)) * index
+            # z.set_index(pd.Index(idx), inplace=True)
+            # Xf.append(z)
 
-            index = index + 1
+            # labels.append(label)
+
+            # index = index + 1
 
             if index % 50000 == 0:
                 print(index)
@@ -1190,14 +1197,14 @@ class CMILoader(UEAloader):
             # test_seq_ids -> Empty when reading training and test data,
             #              -> Contains seq ids when reading validation data.
             if seq_id not in self.args.test_seq_ids:
-                if flag == "TRAIN":
-                    xs, ls, index = self.sample(seq[feature_cols], seq["gesture_int"].values[0], index)
+                #if flag == "TRAIN":
+                #     xs, ls, index = self.sample(seq[feature_cols], seq["gesture_int"].values[0], index)
 
-                    X_list.extend(xs)
-                    labels.extend(ls)
-                    lens.extend([len(seq) for _ in ls])
-                    seq_ids.extend([seq_id for _ in ls])
-                else:
+                #     X_list.extend(xs)
+                #     labels.extend(ls)
+                #     lens.extend([len(seq) for _ in ls])
+                #     seq_ids.extend([seq_id for _ in ls])
+                # else:
                     labels.append(seq["gesture_int"].values[0])
                     seq_ids.append(seq_id)
 
