@@ -1311,8 +1311,8 @@ class CMILoader(UEAloader):
             ms = tseq.to_numpy(copy=False)
 
             acc  = ms[:, ida:idb] + acc_noise
-            rot = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix()
-            rot = np.flip(R.from_matrix(rot).as_quat())
+            rot = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix() # x, y, z, w
+            rot = np.fliplr(R.from_matrix(rot).as_quat()) # w, x, y, z
 
             ms[:, ida:idb] = acc
             ms[:, idr:ids] = rot
