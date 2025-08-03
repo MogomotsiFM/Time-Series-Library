@@ -1161,14 +1161,6 @@ class CMILoader(UEAloader):
             Xf.extend(xs)
             labels.extend(ls)
 
-            # idx = np.ones((z.shape[0],)) * index
-            # z.set_index(pd.Index(idx), inplace=True)
-            # Xf.append(z)
-
-            # labels.append(label)
-
-            # index = index + 1
-
             if index % 50000 == 0:
                 print(index)
 
@@ -1195,26 +1187,18 @@ class CMILoader(UEAloader):
             # test_seq_ids -> Empty when reading training and test data,
             #              -> Contains seq ids when reading validation data.
             if seq_id not in self.args.test_seq_ids:
-                #if flag == "TRAIN":
-                #     xs, ls, index = self.sample(seq[feature_cols], seq["gesture_int"].values[0], index)
+                labels.append(seq["gesture_int"].values[0])
+                seq_ids.append(seq_id)
 
-                #     X_list.extend(xs)
-                #     labels.extend(ls)
-                #     lens.extend([len(seq) for _ in ls])
-                #     seq_ids.extend([seq_id for _ in ls])
-                # else:
-                    labels.append(seq["gesture_int"].values[0])
-                    seq_ids.append(seq_id)
+                seq = seq[feature_cols]
+                seq = seq.copy()
+                idx = np.ones((seq.shape[0],)) * index
+                seq.set_index(pd.Index(idx), inplace=True)
+                
+                index = index + 1
 
-                    seq = seq[feature_cols]
-                    seq = seq.copy()
-                    idx = np.ones((seq.shape[0],)) * index
-                    seq.set_index(pd.Index(idx), inplace=True)
-
-                    index = index + 1
-
-                    X_list.append(seq)
-                    lens.append(len(seq))
+                X_list.append(seq)
+                lens.append(len(seq))
 
         if flag in ["VALI", "TEST"]:  # Validation dataset
             max_seq_len = np.max(lens)
