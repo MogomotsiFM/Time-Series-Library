@@ -1314,7 +1314,7 @@ class CMILoader(UEAloader):
 
             index = index + 1
 
-        idx = np.ones((tseq.shape[0],)) * index
+        idx = np.ones((seq.shape[0],)) * index
         seq.set_index(pd.Index(idx), inplace=True)
 
         Xf.append(seq)
