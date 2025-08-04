@@ -1156,7 +1156,7 @@ class CMILoader(UEAloader):
             z = zdf.iloc[:end]
             z = z.copy(deep=True)
 
-            xs, ls, index = self.sample(z, label, index)
+            xs, ls, index = self.sample(z, label, index, 0)
             
             Xf.extend(xs)
             labels.extend(ls)
@@ -1270,11 +1270,11 @@ class CMILoader(UEAloader):
         """
             N: Number of measurement samples
         """
-        min_acc = -0.30
-        max_acc =  0.30
+        min_acc = -0.30/2
+        max_acc =  0.30/2
 
-        min_rot = -3.50 # Degrees
-        max_rot =  3.50 # Degrees
+        min_rot = -3.50/2 # Degrees
+        max_rot =  3.50/2 # Degrees
 
         ida = np.argmax(np.array(["acc" in header for header in seq.columns]))
         idb = ida + 3
@@ -1313,6 +1313,14 @@ class CMILoader(UEAloader):
             labels.append(label)
 
             index = index + 1
+
+        idx = np.ones((tseq.shape[0],)) * index
+        seq.set_index(pd.Index(idx), inplace=True)
+
+        Xf.append(seq)
+        labels.append(label)
+
+        index = index + 1
 
         return Xf, labels, index
             
