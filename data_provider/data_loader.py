@@ -993,7 +993,7 @@ class CMILoader(UEAloader):
         root_path,
         data_path,
         limit_size=None,
-        flag=None,
+        flag: Union[Literal["TRAIN", "TEST", "VALI"], None]=None,
         normalizer: Union[Normalizer, None] = None,
         label_encoder: Union[LabelEncoder, None] = None,
     ):
@@ -1006,9 +1006,13 @@ class CMILoader(UEAloader):
         batch_x = self.feature_df.loc[self.all_IDs[ind]] #.values
         labels = self.labels_df.loc[self.all_IDs[ind]].values
 
-        batch_x, _, _ = self.sample(batch_x, labels[0], ind, 1)
+        if self.flag == "TRAIN":
+            batch_x, _, _ = self.sample(batch_x, labels[0], ind, 1)
 
-        batch_x = torch.from_numpy(batch_x[0].to_numpy())
+            batch_x = torch.from_numpy(batch_x[0].to_numpy())
+        else:
+            batch_x = batch_x.to_numpy()
+
         labels = torch.from_numpy(labels)
         return batch_x.to(self.args.device), labels.to(self.args.device)
 
