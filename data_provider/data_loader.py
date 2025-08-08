@@ -1156,7 +1156,7 @@ class CMILoader(UEAloader):
             z = zdf.iloc[:end]
             z = z.copy(deep=True)
 
-            xs, ls, index = self.sample(z, label, index, 0)
+            xs, ls, index = self.sample(z, label, index, 2)
             
             Xf.extend(xs)
             labels.extend(ls)
@@ -1179,6 +1179,8 @@ class CMILoader(UEAloader):
         lens: List[int] = []
         seq_ids: List[int] = []
 
+        rot_as_mat_headers = [f"rot_{i}" for i in range(9)]
+
         index = 0
         seq_gp = df.groupby("sequence_id")
         for seq_id, seq in seq_gp:
@@ -1194,6 +1196,13 @@ class CMILoader(UEAloader):
                 seq = seq.copy()
                 idx = np.ones((seq.shape[0],)) * index
                 seq.set_index(pd.Index(idx), inplace=True)
+
+                idr = np.argmax(np.array(["rot" in header for header in seq.columns]))
+                ids = idr + 4
+                assert np.all(["rot" in header for header in seq.columns[idr:ids]]) == True, "The following operation should be applied to acceleration data."
+
+                rots_as_mat = [R.from_quat(np.flip(s[idr:ids])).as_matrix().reshape((1, -1)).squeeze() for s in seq.to_numpy().astype(np.float64)]
+                seq[rot_as_mat_headers] = np.array(rots_as_mat)
                 
                 index = index + 1
 
@@ -1284,7 +1293,8 @@ class CMILoader(UEAloader):
         ids = idr + 4
         assert np.all(["rot" in header for header in seq.columns[idr:ids]]) == True, "The following operation should be applied to acceleration data."
 
-        
+        rot_as_mat_headers = [f"rot_{i}" for i in range(9)]
+
         Xf: List[pd.DataFrame] = []
         labels: List[int] = []
         for _ in range(N):
@@ -1300,14 +1310,18 @@ class CMILoader(UEAloader):
             ms = tseq.to_numpy(copy=False)
 
             acc  = ms[:, ida:idb] + acc_noise
-            rot = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix() # x, y, z, w
-            rot = np.fliplr(R.from_matrix(rot).as_quat()) # w, x, y, z
+            rot_mat = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix() 
+            rot = R.from_matrix(rot_mat).as_quat() # x, y, z, w
+            rot = np.fliplr(rot) # w, x, y, z
 
             ms[:, ida:idb] = acc
             ms[:, idr:ids] = rot
 
             idx = np.ones((tseq.shape[0],)) * index
             tseq.set_index(pd.Index(idx), inplace=True)
+
+            rots_as_mat = [R.from_quat(np.flip(s[idr:ids])).as_matrix().reshape((1, -1)).squeeze() for s in seq.to_numpy().astype(np.float64)]
+            seq[rot_as_mat_headers] = np.array(rots_as_mat)
 
             Xf.append(tseq)
             labels.append(label)
