@@ -1003,10 +1003,12 @@ class CMILoader(UEAloader):
 
     @override
     def __getitem__(self, ind):
-        batch_x = self.feature_df.loc[self.all_IDs[ind]].values
+        batch_x = self.feature_df.loc[self.all_IDs[ind]] #.values
         labels = self.labels_df.loc[self.all_IDs[ind]].values
 
-        batch_x = torch.from_numpy(batch_x)
+        batch_x, _, _ = self.sample(batch_x, labels[0], ind, 1)
+
+        batch_x = torch.from_numpy(batch_x[0].to_numpy())
         labels = torch.from_numpy(labels)
         return batch_x.to(self.args.device), labels.to(self.args.device)
 
@@ -1156,10 +1158,20 @@ class CMILoader(UEAloader):
             z = zdf.iloc[:end]
             z = z.copy(deep=True)
 
-            xs, ls, index = self.sample(z, label, index, 2)
+            xs, ls, index = self.sample(z, label, index, 0)
             
             Xf.extend(xs)
             labels.extend(ls)
+
+            #-----------------------------------------------------------------
+            idx = np.ones((z.shape[0],)) * index
+            z.set_index(pd.Index(idx), inplace=True)
+
+            Xf.append(z)
+            labels.append(label)
+
+            index = index + 1
+            #-----------------------------------------------------------------
 
             if index % 50000 == 0:
                 print(index)
@@ -1328,13 +1340,13 @@ class CMILoader(UEAloader):
 
             index = index + 1
 
-        idx = np.ones((seq.shape[0],)) * index
-        seq.set_index(pd.Index(idx), inplace=True)
+        #idx = np.ones((seq.shape[0],)) * index
+        #seq.set_index(pd.Index(idx), inplace=True)
 
-        Xf.append(seq)
-        labels.append(label)
+        #Xf.append(seq)
+        #labels.append(label)
 
-        index = index + 1
+        #index = index + 1
 
         return Xf, labels, index
             
