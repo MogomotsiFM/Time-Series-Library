@@ -64,13 +64,13 @@ class CMI_TokenEmbedding(nn.Module):
 
     def forward(self, x):
         # batch, seq, 8
-        #handedness = x[:, :, 7]
-        handedness = x[:, 0, 7]
+        handedness = x[:, :, 7]
+        #handedness = x[:, 0, 7]
         x = (
             self.acc_embedding(x[:, :, :3])
             * self.rot_embedding(x[:, :, 8:17])
             * self.handedness_embedding(handedness.long())
-            # + self.handedness_embedding(handedness.reshape(-1, 1, 1))
+            #* self.handedness_embedding(handedness.reshape(-1, 1, 1))
         )
         return x
 
