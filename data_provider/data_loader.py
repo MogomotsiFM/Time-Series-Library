@@ -1008,10 +1008,10 @@ class CMILoader(UEAloader):
 
         if self.flag == "TRAIN":
             batch_x, _, _ = self.sample(batch_x, labels[0], ind, 1)
-        else:
-            batch_x = batch_x.to_numpy()
 
-        batch_x = torch.from_numpy(batch_x[0].to_numpy())
+            batch_x = torch.from_numpy(batch_x[0].to_numpy())
+        else:
+            batch_x = batch_x.values
 
         labels = torch.from_numpy(labels)
         return batch_x.to(self.args.device), labels.to(self.args.device)
