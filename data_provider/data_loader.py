@@ -1011,7 +1011,8 @@ class CMILoader(UEAloader):
 
             batch_x = torch.from_numpy(batch_x[0].to_numpy())
         else:
-            batch_x = batch_x.values
+            #batch_x = batch_x.values
+            batch_x = torch.from_numpy(batch_x.to_numpy())
 
         labels = torch.from_numpy(labels)
         return batch_x.to(self.args.device), labels.to(self.args.device)
