@@ -1337,8 +1337,7 @@ class CMILoader(UEAloader):
             idx = np.ones((tseq.shape[0],)) * index
             tseq.set_index(pd.Index(idx), inplace=True)
 
-            rots_as_mat = [R.from_quat(np.flip(s[idr:ids])).as_matrix().reshape((1, -1)).squeeze() for s in seq.to_numpy().astype(np.float64)]
-            seq[rot_as_mat_headers] = np.array(rots_as_mat)
+            tseq[rot_as_mat_headers] = rot_mat.reshape((tseq.shape[0], -1))
 
             Xf.append(tseq)
             labels.append(label)
