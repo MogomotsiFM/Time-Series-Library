@@ -3,6 +3,8 @@ import math
 import glob
 import re
 
+import time
+
 import numpy as np
 import pandas as pd
 import torch
@@ -1300,17 +1302,11 @@ class CMILoader(UEAloader):
         min_acc = -0.30/2
         max_acc =  0.30/2
 
-        min_rot = -3.50/2 # Degrees
-        max_rot =  3.50/2 # Degrees
+        min_rot = -3.50/4 # Degrees
+        max_rot =  3.50/4 # Degrees
 
-        ida = np.argmax(np.array(["acc" in header for header in seq.columns]))
-        idb = ida + 3
-        assert np.all(["acc" in header for header in seq.columns[ida:idb]]) == True, "The following operation should be applied to acceleration data."
         acc_headers = [h for h in seq.columns if "acc" in h]
 
-        idr = np.argmax(np.array(["rot" in header for header in seq.columns]))
-        ids = idr + 4
-        assert np.all(["rot_" in header for header in seq.columns[idr:ids]]) == True, "The following operation should be applied to acceleration data."
         rot_headers = [h for h in seq.columns if "rot_" in h]
 
         rot_as_mat_headers = [f"rot-{i}" for i in range(9)]
@@ -1329,19 +1325,13 @@ class CMILoader(UEAloader):
             tseq = seq.copy(deep=True)
             ms = tseq.to_numpy(copy=False)
 
-            #acc  = ms[:, ida:idb] + acc_noise
             tseq[acc_headers] = tseq[acc_headers].to_numpy() + acc_noise
-            #rot_mat = R.from_quat(ms[:, idr:ids]).as_matrix() @ rot_noise.as_matrix() 
             rot_mat = R.from_quat(tseq[rot_headers].to_numpy()).as_matrix() @ rot_noise.as_matrix() 
             rot = R.from_matrix(rot_mat).as_quat() # x, y, z, w
             rot = np.fliplr(rot) # w, x, y, z
 
-            #ms[:, ida:idb] = acc
-            #ms[:, idr:ids] = rot
             tseq[rot_headers] = rot
 
-            #rots_as_mat = [R.from_quat(np.flip(s[idr:ids])).as_matrix().reshape((1, -1)).squeeze() for s in tseq.to_numpy().astype(np.float64)]
-            #tseq[rot_as_mat_headers] = np.array(rots_as_mat)
             tseq[rot_as_mat_headers] = rot_mat.reshape((tseq.shape[0], -1))
 
             idx = np.ones((tseq.shape[0],)) * index
@@ -1351,14 +1341,6 @@ class CMILoader(UEAloader):
             labels.append(label)
 
             index = index + 1
-
-        #idx = np.ones((seq.shape[0],)) * index
-        #seq.set_index(pd.Index(idx), inplace=True)
-
-        #Xf.append(seq)
-        #labels.append(label)
-
-        #index = index + 1
 
         return Xf, labels, index
             
