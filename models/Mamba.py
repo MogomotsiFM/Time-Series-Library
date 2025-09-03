@@ -36,6 +36,13 @@ class Model(nn.Module):
 
         self.out_layer = nn.Linear(configs.d_model, configs.c_out, bias=False)
 
+        if self.task_name == "classification":
+            self.act = F.gelu
+            self.dropout = nn.Dropout(configs.dropout)
+            self.out_layer = nn.Linear(
+                configs.d_model * configs.seq_len, configs.num_class
+            )
+
     def forecast(self, x_enc, x_mark_enc):
         mean_enc = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc - mean_enc
