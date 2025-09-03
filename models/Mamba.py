@@ -36,6 +36,8 @@ class Model(nn.Module):
 
         self.out_layer = nn.Linear(configs.d_model, configs.c_out, bias=False)
 
+        self.act = None
+        self.dropout = None
         if self.task_name == "classification":
             self.act = F.gelu
             self.dropout = nn.Dropout(configs.dropout)
